@@ -35,7 +35,7 @@ d.stations <- sf::read_sf(p.stations)
 glimpse(d.counties)
 glimpse(d.stations)
 
-# check for validity
+# check for validity geometry
 d.stations %>% sf::st_is_valid()
 d.counties %>% sf::st_is_valid() # returns false for one feature, so we need to fix
 
@@ -95,7 +95,7 @@ d.counties %>%
 We can also use grouping functions in our visualization. For example:
 
 ```{r plots, echo=TRUE, message=TRUE}
-d.counties %>% 
+d.counties %>%  # . would mean "self" in this case
   ggplot(., aes(x = as.factor(STATEFP10), y = ALAND10)) +
   geom_boxplot(aes(fill = STATEFP10))
 ```
@@ -164,21 +164,12 @@ Complete each task COMPLETELY USING R CODE. YOU MUST SHOW YOUR WORK FOR EACH ANS
 #creating a new df that has the sum of land,water, and their sum together
 new.d.counties <- d.counties %>%
 group_by(STATEFP10) %>%
-  mutate(stateLandArea = sum(ALAND10)) %>%
-  mutate(stateWaterArea = sum(AWATER10)) %>%
-  mutate(totalStateArea = sum(stateLandArea + stateWaterArea))
+  mutate(totalStateArea = sum(AWATER10 + ALAND10)) %>%
+      ungroup() %>%
+      group_by(COUNTYFP10) %>%
+  mutate(countyLandPerc = (ALAND10 / totalStateArea) * 100)
 
-#calculating county area as a percentage of total area
-#start by calculating county area
-new.d.counties <- new.d.counties %>%
-group_by(COUNTYFP10) %>%
-  mutate(countyLandArea = sum(ALAND10))%>%
-  mutate(countyWaterArea = sum(AWATER10)) %>%
-  mutate(totalCountyArea = sum(countyLandArea + countyWaterArea))
 
-# calculate the percentage of land
-new.d.counties <- new.d.counties %>%
-  mutate(countyLandPercent = (countyLandArea / totalStateArea))
 ```
 
 
@@ -186,8 +177,8 @@ new.d.counties <- new.d.counties %>%
 ```{r}
 #create column for county water area/ county total area
 new.d.counties <- new.d.counties %>%
-group_by(COUNTYFP10) %>%
-  mutate(countyWaterPercent = (countyWaterArea /totalCountyArea))
+group_by(STATEFP10) %>%
+  mutate(countyWaterPercent = (AWATER10 / totalStateArea) *100) 
 
 # search for which county has the highest percent of water area
 new.d.counties %>%
@@ -199,7 +190,7 @@ group_by(STATEFP10) %>% dplyr::slice_max(countyWaterPercent)
 ```{r}
 #create column with the count of counties per state
 new.d.counties  %>%
-as_tibble() %>% dplyr::select(-geometry) %>%
+as_tibble() %>% dplyr::select(-geometry) %>% #have to say as tibble to minus geometry
   group_by(STATEFP10) %>%
   summarise(count= n(), .groups="drop") 
 
@@ -216,6 +207,7 @@ d.stations <- d.stations %>%
   mutate(name_length = str_length(STATION_NA))
 
 d.stations %>% dplyr::slice_min(name_length)
+
 ```
 
 
@@ -224,19 +216,48 @@ d.stations %>% dplyr::slice_min(name_length)
 
 2.1 Make a scatterplot showing the relationship between land area and water area for each county. Color each point using the state variable
 ```{r}
+task2.1_plot <- new.d.counties %>%
+  group_by(COUNTYFP10) %>%
+  ggplot(aes(x=ALAND10, y=AWATER10)) +
+    geom_point(aes(color=STATEFP10)) +
+  labs(x="County Land Area (m2)",
+       y="County Water Area (m2)",
+       title="Relationship between county land and water area",
+       subtitle="In the Chesapeake Bay Watershed") +
+  theme_bw()
 
+task2.1_plot
+  
 ```
 
 
 2.2 Make a histogram of drainage area (`Drainage_A`) for all monitoring stations
 ```{r}
+task2.2_plot <- d.stations %>% 
+  ggplot(., aes(x = Drainage_A)) +
+  geom_histogram(fill="purple") +
+  labs(title = "Drainage Area of all monitoring stations within the CBW",
+       x="Drainage Area",
+       y="Frequency")
 
+task2.2_plot
 ```
 
 
 2.3 Make a similar histogram of drainage area (`Drainage_A`) for all monitoring stations. This time, shade/color each portion of the histogram's bar(s) using the state variable
 ```{r}
+#intersection of new.counties.d and d.stations to find the state
+station_location <- sf::st_intersection(d.stations, new.d.counties)
 
+task2.3_plot <- station_location %>% 
+  ggplot(., aes(x = Drainage_A)) +
+  geom_histogram(aes(fill=STATEFP10)) +
+  labs(title = "Drainage Area of all monitoring stations within the CBW",
+       x="Drainage Area",
+       y="Frequency",
+       fill="State FP Code")
+
+task2.3_plot
 ```
 
 
