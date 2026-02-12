@@ -1,0 +1,33 @@
+---
+title: "Wildcard Lake HABs"
+author: "Hana Esber"
+date: "2026-02-12"
+output: html_document
+---
+
+```{r}
+#load packages
+library(terra)
+library(tidyverse)
+library(sf)
+```
+
+Read in data
+```{r}
+#Lake Champlain, Missiqoi Bay, Lake stations
+p.champlain <- "./wildcard_thursday/lake_champlain.shp"
+p.bb_miss <- "./wildcard_thursday/bb_miss.shp"
+p.lake_stations <- "./wildcard_thursday/lake_stations.shp"
+
+#read in shapefiles
+champlain <-  sf::read_sf(p.champlain)
+bb_miss <-  sf::read_sf(p.bb_miss)
+lake_stations <-  sf::read_sf(p.lake_stations)
+
+#check their CRS
+champlain %>% sf::st_crs() #NAD83 / Vermont
+bb_miss %>% sf::st_crs() #Albers_Conic_Equal_Area
+lake_stations %>% sf::st_crs() #"WGS 84
+
+```
+
