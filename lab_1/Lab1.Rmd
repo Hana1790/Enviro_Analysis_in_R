@@ -188,7 +188,6 @@ group_by(STATEFP10) %>% dplyr::slice_max(countyWaterPercent)
 
 1.3 Count the number of counties in each state
 ```{r}
-#create column with the count of counties per state
 new.d.counties  %>%
 as_tibble() %>% dplyr::select(-geometry) %>% #have to say as tibble to minus geometry
   group_by(STATEFP10) %>%
@@ -274,30 +273,80 @@ D. the function should only work with numeric values and print an error message 
 
 Test it with the following vectors
 ```{r}
+fun <- function(a) {
+  
+  #check if vector is numeric, if not, print error
+  if (!is.numeric(a)) {
+    stop("Error: This not a numeric vector.")
+  }    
+  #calculate listed statistics
+  mean_value <- mean(a)
+  median_value <- median(a)
+  max_value <- max(a)
+  min_value <- min(a)
+  
+  #store statistics in a vector
+  stats <- c(mean_value,median_value,max_value,min_value)
+  
+  #sort vector by smallest to largest values
+  stats_sorted <- sort(stats, decreasing = FALSE)
+  
+  #print both a and the calculated values that are sorted
+  print(a)
+  print(stats_sorted)
+  
+}
+
+#testing function
+test.1 <- c(1, 0, -1)
+test.2 <- c(10, 1000, 100)
+test.3 <- c(.1, .001, 1e8)
+test.4 <- c("a", "b", "c")
+
+fun(test.1)
+fun(test.2)
+fun(test.3)
+fun(test.4)
 
 ```
 
-
-`c(1, 0, -1), c(10, 1000, 100), c(.1, .001, 1e8), c("a", "b", "c")`
 
 ### Task 4: A (slightly) more complex spatial analysis. 
 ...Note, you may need to find supplementary data to help you with these tasks
 
 4.1 Calculate the number of monitoring stations in each state
 ```{r}
-
+#count monitoring stations by state
+station_location  %>%
+as_tibble() %>% dplyr::select(-geometry) %>% #have to say as tibble to minus geometry
+  group_by(STATEFP10) %>%
+  summarise(count= n(), .groups="drop") 
 ```
 
 
 4.2 Calculate the average size of counties in New York (that are also in this study area)
 ```{r}
+#create NY counties
+ny.counties <- d.counties %>% dplyr::filter(STATEFP10 == 36)
+
+#finding total size
+ny.counties <- ny.counties %>%
+  group_by(COUNTYFP10)  %>%
+  mutate(totalcountyArea = sum(AWATER10 + ALAND10)) 
+
+#find mean size of the counties
+mean(ny.counties$totalcountyArea)
 
 ```
 
 
 4.3 Calculate which state has monitoring stations with the greatest average drainage area (Drainage_A)
 ```{r}
+station_location <- station_location %>%
+  group_by(STATEFP10) %>%
+  mutate(avg_drainage = mean(Drainage_A)) 
 
+dplyr::slice_max(avg_drainage)
 ```
 
 
@@ -306,10 +355,11 @@ Test it with the following vectors
 
 1. In using the intersection functions, are the following two statements equivalent? If not, explain how. Be sure to think about BOTH the spatial data structures AND the attribute data. Would your answer be different if we were using different types of data?
 
+```{r}
+sf::st_intersection(d.stations, del.counties)
+sf::st_intersection(del.counties, d.stations)
 ```
- sf::st_intersection(d.stations, del.counties)
- sf::st_intersection(del.counties, d.stations)
-```
+I think the differences is what type of data will be retained. In the first scenario, station data will be preserved and it will find what Delaware counties have a station. In the second scenario, it preserves del.counties data and it is useful to see if there are stations in those counties. I think 
 
 
 2. What did you find challenging in this lab? What was new?
