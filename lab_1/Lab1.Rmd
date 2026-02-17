@@ -277,7 +277,7 @@ fun <- function(a) {
   
   #check if vector is numeric, if not, print error
   if (!is.numeric(a)) {
-    stop("Error: This not a numeric vector.")
+    warning("Error: This not a numeric vector.")
   }    
   #calculate listed statistics
   mean_value <- mean(a)
@@ -291,9 +291,8 @@ fun <- function(a) {
   #sort vector by smallest to largest values
   stats_sorted <- sort(stats, decreasing = FALSE)
   
-  #print both a and the calculated values that are sorted
-  print(a)
-  print(stats_sorted)
+  #return both a and the calculated values that are sorted
+  return(list(stats, stats_sorted))
   
 }
 
@@ -306,8 +305,7 @@ test.4 <- c("a", "b", "c")
 fun(test.1)
 fun(test.2)
 fun(test.3)
-#uncomment to check
-#fun(test.4)
+fun(test.4)
 
 ```
 
@@ -330,13 +328,12 @@ as_tibble() %>% dplyr::select(-geometry) %>% #have to say as tibble to minus geo
 #create NY counties
 ny.counties <- d.counties %>% dplyr::filter(STATEFP10 == 36)
 
-#finding total size
-ny.counties <- ny.counties %>%
-  group_by(COUNTYFP10)  %>%
-  mutate(totalcountyArea = sum(AWATER10 + ALAND10)) 
-
-#find mean size of the counties
-mean(ny.counties$totalcountyArea)
+#finding total size and mean
+ny.counties %>%
+  as_tibble() %>%
+  select(-geometry) %>%
+  mutate(totalcountyArea = (AWATER10 + ALAND10)) %>%
+  summarise(avg_size = mean(totalcountyArea, na.rm=TRUE))
 
 ```
 
@@ -345,12 +342,12 @@ mean(ny.counties$totalcountyArea)
 ```{r}
 station_location <- station_location %>%
   group_by(STATEFP10) %>%
-  mutate(avg_drainage = mean(Drainage_A)) 
+  mutate(avg_drainage = mean(Drainage_A)) %>%
+  ungroup()
 
 #search for what state has the greatest avg drainage area
-station_location %>%
-  group_by(STATEFP10) %>%
-dplyr::slice_max(avg_drainage)
+station_location %>% 
+dplyr::slice_max(order_by = avg_drainage, n = 1, with_ties = FALSE) %>% dplyr::select(STATEFP10) %>% head() 
 ```
 
 
@@ -360,13 +357,14 @@ dplyr::slice_max(avg_drainage)
 1. In using the intersection functions, are the following two statements equivalent? If not, explain how. Be sure to think about BOTH the spatial data structures AND the attribute data. Would your answer be different if we were using different types of data?
 
 ```{r}
-sf::st_intersection(d.stations, del.counties)
-sf::st_intersection(del.counties, d.stations)
+check1 <- sf::st_intersection(d.stations, del.counties)
+check2 <- sf::st_intersection(del.counties, d.stations)
 ```
-I think the differences is what type of data will be retained. In the first scenario, station data will be preserved and it will find what Delaware counties have a station. In the second scenario, it preserves del.counties data and it is useful to see if there are stations in those counties. I think 
+They technically give the same response, but the differences is what type of data will be retained. In the first scenario, station data will be preserved and it will find what stations are in Delaware counties. In the second scenario, it preserves del.counties data and it is useful to see if there are stations in those counties. I think this would be different if we had two objects with very different shapes or geometries like if one was lines and the other was polygons. Depending on the intersection order, you would retain the shape of the first object.
 
 
 2. What did you find challenging in this lab? What was new?
-
+I think it was challenging that this lab didn't have clear meta data associated with it. Overall it was a good structure and I think it was challenging but I was capable of doing it mostly correct (I hope).
 
 3. What types of activities would you like to see in labs this semester?
+I would like to do activities like this that use real data and would be realistic problems we would face. I think it would also be cool to see some code that you have done that was tricky and how you found your solution.
