@@ -306,7 +306,8 @@ test.4 <- c("a", "b", "c")
 fun(test.1)
 fun(test.2)
 fun(test.3)
-fun(test.4)
+#uncomment to check
+#fun(test.4)
 
 ```
 
@@ -346,6 +347,9 @@ station_location <- station_location %>%
   group_by(STATEFP10) %>%
   mutate(avg_drainage = mean(Drainage_A)) 
 
+#search for what state has the greatest avg drainage area
+station_location %>%
+  group_by(STATEFP10) %>%
 dplyr::slice_max(avg_drainage)
 ```
 
