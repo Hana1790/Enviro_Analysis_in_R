@@ -293,11 +293,37 @@ I have given you all of the tools to complete the following items:
 - find ALL of the Ohio parks within 1km of a 303d stream
 - Make a map (using `tmap`) of just those parks (not all parks), overlaid on a Ohio county map
 - Add a color to the parks based on the type of park (like we did)
+```{r}
+#need 303 d streams and ohio_parks_p
+#check crs of 303d and parks
+st_crs(streams.303d) == st_crs(oh_parks) #shp ohio parks
+
+#create buffer from 303d streams (1 km)
+stream_buffer <- sf::st_buffer(streams.303d, dist = 1000)
+
+#create intersection of stream buffer and parks
+ohio_streams_parks <- sf::st_intersection(oh_parks, stream_buffer)
+
+tmap::tmap_mode()
+tmap::ttm() #SWITCHES VIEW!
+
+#plotting the parks that interesect
+tm_shape(oh_counties) + tm_polygons(fill = "grey") + 
+  tm_shape(streams.303d) + tm_lines(col = "purple")+
+  tm_shape(ohio_streams_parks) + tm_polygons(fill = "FEATTYPE", palette = "brewer.dark2") 
+
+
+```
+
 
 ### Task(s) 2
 - Calculate the distance between parks and 303d streams in the study area
 - Then, calculate the *difference* between projected and unprojected distances
 - Then, make a histogram of those differences (better termed "errors")
+```{r}
+#original 4 counties study area
+
+```
 
 
 ### Bonus work
