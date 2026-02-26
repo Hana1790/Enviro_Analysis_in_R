@@ -239,17 +239,74 @@ by(bmps$Cost, bmps$StateAbbreviation, summary)
 
 1.2 Make a scatterplot of Cost vs. TotalAmountCredited, ONLY FOR BMPs with `Units` of type "Acres". You may need to apply a data transformation to one or more axes if the data are heavily skewed.
 ```{r}
+#select BMPs with units of Acres
+Acres_bmps <- bmps |>
+  filter(Unit=="Acres")
 
+#make scatterplot
+acre_scatter <-
+  ggplot(Acres_bmps, aes(x = Cost, y = TotalAmountCredited)) +
+  geom_point()
+
+acre_scatter
+
+#need to transform this data- starting with y axis
+y_log_scatter <-
+  Acres_bmps %>%
+    ggplot(., aes(x = Cost, y = TotalAmountCredited)) +
+    geom_point() +
+    scale_y_log10() +
+    labs(y = "log10(TotalAmountCredited)")
+
+y_log_scatter
+
+#trying x axis instead
+x_log_scatter <-
+  Acres_bmps %>%
+    ggplot(., aes(x = Cost, y = TotalAmountCredited)) +
+    geom_point() +
+    scale_x_log10() +
+    labs(x = "log10(Cost)")
+
+x_log_scatter
+
+#both were pretty bad, trying them at the same time
+log_scatter <-
+  Acres_bmps %>%
+    ggplot(., aes(x = Cost, y = TotalAmountCredited)) +
+    geom_point() +
+    scale_x_log10() +
+    scale_y_log10 () +
+    labs(x = "log10(Cost)",
+         y = "log10(TotalAmountCredited)")
+
+log_scatter
 ```
 
 1.3 Make a boxplot with "StateAbbreviation" on the x-axis and "TotalAmountCredited" on the y-axis. HOWEVER, the only data I want plotted are for cover crop BMPs. Note, there are many types of cover crops in this dataset, and I want you to include them ALL. There are handy functions within the ```stringr``` package that can help you here. Use the help function ```?stringr``` or read the documentations/vignettes found online. A Google search for "r stringr vignettes documentation" would be a good place to start if you're having trouble.
 ```{r}
+#filtering for only cover crop bmps
+#looking at different types of bmps
+unique(bmps$BMP)
 
+cover_crop <-
+  bmps |> 
+  filter(str_detect(BMP, "Cover Crop")) |>
+  ggplot(aes(x = StateAbbreviation, y = TotalAmountCredited)) +
+    geom_boxplot(aes(fill = StateAbbreviation)) 
+
+cover_crop
 ```
 
 1.4 make a scatterplot of the `dam` dataset, this time with "YEAR" on the x-axis and "STATE" on y-axis (think of it like a timeline). Assume no dams were built in year 0, so you'll need to remove those data points. You know how to remove observations based on a given criteria.
 ```{r}
-
+#remove year 0 from dams and plot!
+dams_new <- dams |>
+  filter(YEAR != 0) |>
+  ggplot(aes(x = YEAR, y = STATE)) +
+    geom_point() 
+  
+dams_new
 ```
 
 1.5 make one last (aspatial) visualization. But this time, it's your choice what data and plots to use. The only requirement is that you link two of the datasets together in some manner. Be creative. Make it look nice (e.g., use proper labels, interesting colors/shading/size).
@@ -262,7 +319,9 @@ by(bmps$Cost, bmps$StateAbbreviation, summary)
 
 2.1 Find the 5 longest streams in the 'streams opened by dam removal' dataset
 ```{r}
-
+#group by GNIS name
+streams |> group_by(GNIS_Name) |>
+  sum
 ```
 
 2.2 Find the three counties with the greatest TOTAL length of streams (opened by dam removal) in them
