@@ -1,0 +1,1102 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Lab 02},
+  colorlinks=true,
+  linkcolor={Maroon},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Lab 02}
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+\maketitle
+
+\section{Lab 02: R as a GIS}\label{lab-02-r-as-a-gis}
+
+\subsubsection{Read the instructions COMPLETELY before starting the
+lab}\label{read-the-instructions-completely-before-starting-the-lab}
+
+This lab builds on many of the discussions and exercises from class,
+including previous labs.
+
+\subsubsection{Formatting your
+submission}\label{formatting-your-submission}
+
+This lab must be placed into a public repository on GitHub
+(www.github.com). Before the due date, submit \textbf{on Canvas} a link
+to the repository. I will then download your repositories and run your
+code. The code must be contained in either a .R script or a .Rmd
+markdown document. As I need to run your code, any data you use in the
+lab must be referenced using \textbf{relative path names}. Finally,
+answers to questions I pose in this document must also be in the
+repository at the time you submit your link to Canvas. They can be in a
+separate text file, or if you decide to use an RMarkdown document, you
+can answer them directly in the doc.
+
+\subsection{Data}\label{data}
+
+The data for this lab can be found in the \texttt{./data/CBW/} directory
+within the course GitHub repository.
+
+Spatial datasets:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Streams\_Opened\_by\_Dam\_Removal\_2012\_2017.shp
+\item
+  Dam\_or\_Other\_Blockage\_Removed\_2012\_2017.shp
+\item
+  County\_Boundaries.shp
+\end{enumerate}
+
+Non-spatial datasets
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  BMPreport2016\_landbmps.csv
+\end{enumerate}
+
+\subsection{Working with tabular data}\label{working-with-tabular-data}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# setup}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'tidyverse' was built under R version 4.4.2
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'ggplot2' was built under R version 4.4.3
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'readr' was built under R version 4.4.2
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'purrr' was built under R version 4.4.3
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'dplyr' was built under R version 4.4.3
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'forcats' was built under R version 4.4.2
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'lubridate' was built under R version 4.4.2
+\end{verbatim}
+
+\begin{verbatim}
+## -- Attaching core tidyverse packages ------------------------ tidyverse 2.0.0 --
+## v dplyr     1.1.4     v readr     2.1.5
+## v forcats   1.0.0     v stringr   1.5.1
+## v ggplot2   4.0.0     v tibble    3.2.1
+## v lubridate 1.9.4     v tidyr     1.3.1
+## v purrr     1.1.0     
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+## i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(sf)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'sf' was built under R version 4.4.2
+\end{verbatim}
+
+\begin{verbatim}
+## Linking to GEOS 3.12.2, GDAL 3.9.3, PROJ 9.4.1; sf_use_s2() is TRUE
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(tmap)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'tmap' was built under R version 4.4.3
+\end{verbatim}
+
+A ``join'' is a method to join multiple tables together using a matching
+``key'' found in both datasets. For example:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# table of names}
+\NormalTok{t.names }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{key =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{3}\NormalTok{), }
+             \AttributeTok{name =} \FunctionTok{c}\NormalTok{(}\StringTok{"Huey"}\NormalTok{, }\StringTok{"Dewey"}\NormalTok{, }\StringTok{"Louis"}\NormalTok{))}
+
+\CommentTok{\# table of scores}
+\NormalTok{t.scores }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{name =} \FunctionTok{c}\NormalTok{(}\StringTok{"Louis"}\NormalTok{, }\StringTok{"Huey"}\NormalTok{, }\StringTok{"Dewey"}\NormalTok{),}
+                   \AttributeTok{grade =} \FunctionTok{c}\NormalTok{(}\DecValTok{99}\NormalTok{, }\DecValTok{45}\NormalTok{, }\DecValTok{33}\NormalTok{))}
+
+\CommentTok{\# join them together using a common variable, in this case the "name" variable}
+\NormalTok{t.joined }\OtherTok{\textless{}{-}} \FunctionTok{left\_join}\NormalTok{(t.names, t.scores, }\AttributeTok{by =} \StringTok{"name"}\NormalTok{)}
+\NormalTok{t.joined}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 3
+##     key name  grade
+##   <dbl> <chr> <dbl>
+## 1     1 Huey     45
+## 2     2 Dewey    33
+## 3     3 Louis    99
+\end{verbatim}
+
+A ``left join'' finds starts with the table on the ``left'' and then
+finds matches in the table on the ``right''. See the documentation using
+\texttt{?left\_join} for more details and for other types of joins.
+Sometimes the attributes you're using to join the tables won't have the
+same name, in which case the you need to tell the join function which
+variables to join on. Note the difference in the \texttt{by} argument in
+the below code block compared to the one above.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t.wonkyNames }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{nombre =} \FunctionTok{c}\NormalTok{(}\StringTok{"Dewey"}\NormalTok{, }\StringTok{"Louis"}\NormalTok{, }\StringTok{"Huey"}\NormalTok{),}
+                       \AttributeTok{x =} \FunctionTok{rep}\NormalTok{(}\DecValTok{999}\NormalTok{),}
+                       \AttributeTok{favoriteFood =} \FunctionTok{c}\NormalTok{(}\StringTok{"banana"}\NormalTok{, }\StringTok{"apple"}\NormalTok{, }\StringTok{"carrot"}\NormalTok{))}
+
+\NormalTok{t.joined2 }\OtherTok{\textless{}{-}} \FunctionTok{left\_join}\NormalTok{(t.names, t.wonkyNames, }\AttributeTok{by =} \FunctionTok{c}\NormalTok{(}\StringTok{"name"} \OtherTok{=} \StringTok{"nombre"}\NormalTok{))}
+\NormalTok{t.joined2}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 4
+##     key name      x favoriteFood
+##   <dbl> <chr> <dbl> <chr>       
+## 1     1 Huey    999 carrot      
+## 2     2 Dewey   999 banana      
+## 3     3 Louis   999 apple
+\end{verbatim}
+
+\subsection{Let's take a look at some tabular
+data}\label{lets-take-a-look-at-some-tabular-data}
+
+This dataset includes a list of best management practices (``BMPs'') to
+reduce nutrient and sediment pollution in the Chesapeake Bay Watershed.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{bmps }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"../Lab\_2/CBW/BMPreport2016\_landbmps.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 69601 Columns: 18
+## -- Column specification --------------------------------------------------------
+## Delimiter: ","
+## chr (11): StateAbbreviation, GeographyName, Geography, Agency, BMPShortName,...
+## dbl  (7): AmountSubmitted, AmountBackedOut, AmountNotBackedOut, AmountCredit...
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{glimpse}\NormalTok{(bmps)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 69,601
+## Columns: 18
+## $ StateAbbreviation   <chr> "DC", "DC", "DC", "DC", "DC", "DC", "DC", "DC", "D~
+## $ GeographyName       <chr> "11001(cbwsonly)", "11001(cbwsonly)", "11001(cbwso~
+## $ Geography           <chr> "Washington, DC (CBWS Portion Only)", "Washington,~
+## $ Agency              <chr> "Department of Defense", "Department of Defense", ~
+## $ BMPShortName        <chr> "wetpondwetland", "wetpondwetland", "wetpondwetlan~
+## $ BMP                 <chr> "Wet Ponds and Wetlands", "Wet Ponds and Wetlands"~
+## $ BMPType             <chr> "Efficiency", "Efficiency", "Efficiency", "Efficie~
+## $ Unit                <chr> "Acres Treated", "Acres Treated", "Acres Treated",~
+## $ Sector              <chr> "Developed", "Developed", "Developed", "Developed"~
+## $ FromLoadSource      <chr> "Non-Regulated Roads", "Non-Regulated Buildings an~
+## $ ToLoadSource        <chr> "Non-Regulated Roads", "Non-Regulated Buildings an~
+## $ AmountSubmitted     <dbl> 8.709123261, 47.984171150, 1.358309392, 6.76626660~
+## $ AmountBackedOut     <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
+## $ AmountNotBackedOut  <dbl> 8.709123261, 47.984171150, 1.358309392, 6.76626660~
+## $ AmountCredited      <dbl> 8.709123261, 47.984171150, 1.358309392, 6.76626660~
+## $ Excess              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
+## $ TotalAmountCredited <dbl> 8.709123261, 47.984171150, 1.358309392, 6.76626660~
+## $ Cost                <dbl> 11462.077120, 63151.967650, 1787.670991, 8905.0834~
+\end{verbatim}
+
+Look at the attribute ``GeographyName'' - it's a character attribute
+that contains the counties' FIPS code, but also some ancillary
+explanatory data we need to get rid of. There are multiple ways of doing
+so, including some (very) fancy automated methods that detect patterns
+of numbers and characters. We're going to take a simpler approach and
+assume that all FIPS codes are only 5 characters long.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# edit the bmps variable in place, which isn\textquotesingle{}t always best practices}
+\NormalTok{bmps }\OtherTok{\textless{}{-}}\NormalTok{ bmps }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{mutate}\NormalTok{(., }\AttributeTok{FIPS.trimmed =}\NormalTok{ stringr}\SpecialCharTok{::}\FunctionTok{str\_sub}\NormalTok{(GeographyName, }\DecValTok{1}\NormalTok{, }\DecValTok{5}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+This preparing raw data for further analysis is commonly called
+``munging''. While the term isn't the important part, these kinds of
+preparatory steps can be useful when you're trying to create ``keys'' by
+which to join tables or just clean your tables in general.
+
+Let's recall how to do some simple tasks
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Let\textquotesingle{}s calculate the total cost by BMP and then plot it}
+\NormalTok{bmps }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{group\_by}\NormalTok{(BMPType) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{summarise}\NormalTok{(}\AttributeTok{totalCost =} \FunctionTok{sum}\NormalTok{(Cost)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ BMPType, }\AttributeTok{y =}\NormalTok{ totalCost)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{stat =} \StringTok{"identity"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Removed 2 rows containing missing values or values outside the scale range
+## (`geom_bar()`).
+\end{verbatim}
+
+\includegraphics{lab02_files/figure-latex/review-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Doesn\textquotesingle{}t really work. This is because there are missing data in the cost attribute. }
+\CommentTok{\# Let\textquotesingle{}s look at it (and this is why we do exploratory data analysis first)}
+
+\FunctionTok{summary}\NormalTok{(bmps}\SpecialCharTok{$}\NormalTok{Cost)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+##        0        0      142    37408     3583 39731974    14286
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Yup, lots of "NA\textquotesingle{}s"... We can drop them in our analysis. }
+\CommentTok{\# Look carefully at the code in the \textquotesingle{}sum\textquotesingle{} function. What is the na.rm = T parameter doing?}
+
+
+\NormalTok{bmps }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{group\_by}\NormalTok{(BMPType) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{summarise}\NormalTok{(}\AttributeTok{totalCost =} \FunctionTok{sum}\NormalTok{(Cost, }\AttributeTok{na.rm =}\NormalTok{ T)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ BMPType, }\AttributeTok{y =}\NormalTok{ totalCost)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{stat =} \StringTok{"identity"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/review-2.pdf}
+
+We can also group by multiple variables at the same time. For example:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# group by state and sector, sum total cost}
+\NormalTok{twofactors }\OtherTok{\textless{}{-}}\NormalTok{ bmps }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{group\_by}\NormalTok{(StateAbbreviation, Sector) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{totalCost =} \FunctionTok{sum}\NormalTok{(Cost))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` has grouped output by 'StateAbbreviation'. You can override using
+## the `.groups` argument.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{twofactors}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 25 x 3
+## # Groups:   StateAbbreviation [7]
+##    StateAbbreviation Sector      totalCost
+##    <chr>             <chr>           <dbl>
+##  1 DC                Developed         NA 
+##  2 DC                Natural           NA 
+##  3 DE                Agriculture       NA 
+##  4 DE                Developed         NA 
+##  5 DE                Natural           NA 
+##  6 DE                Septic       2064477.
+##  7 MD                Agriculture       NA 
+##  8 MD                Developed         NA 
+##  9 MD                Natural           NA 
+## 10 MD                Septic      50470281.
+## # i 15 more rows
+\end{verbatim}
+
+For our last bit of review, let's make a few box plots:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# A simple one}
+\NormalTok{bmps }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ StateAbbreviation, }\AttributeTok{y =}\NormalTok{ AmountCredited)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{fill =}\NormalTok{ StateAbbreviation))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/review3-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Very heavily skewed, so just for the sake of visualization, }
+\CommentTok{\# let\textquotesingle{}s subset the data (dramatically)}
+\NormalTok{bmps }\SpecialCharTok{\%\textgreater{}\%} 
+\NormalTok{  dplyr}\SpecialCharTok{::}\FunctionTok{filter}\NormalTok{(., AmountCredited }\SpecialCharTok{\textgreater{}} \DecValTok{1} \SpecialCharTok{\&}\NormalTok{ AmountCredited }\SpecialCharTok{\textless{}} \DecValTok{100}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ StateAbbreviation, }\AttributeTok{y =}\NormalTok{ AmountCredited)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{fill =}\NormalTok{ StateAbbreviation))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/review3-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# We can also plot multiple dimensions in our plot using }
+\CommentTok{\# the \textasciigrave{}facet\textasciigrave{} family of commands in ggplot}
+
+\NormalTok{bmps }\SpecialCharTok{\%\textgreater{}\%} 
+\NormalTok{  dplyr}\SpecialCharTok{::}\FunctionTok{filter}\NormalTok{(., AmountCredited }\SpecialCharTok{\textgreater{}} \DecValTok{1} \SpecialCharTok{\&}\NormalTok{ AmountCredited }\SpecialCharTok{\textless{}} \DecValTok{100}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ StateAbbreviation, }\AttributeTok{y =}\NormalTok{ AmountCredited)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{fill =}\NormalTok{ StateAbbreviation)) }\SpecialCharTok{+}
+  \FunctionTok{facet\_grid}\NormalTok{(Sector}\SpecialCharTok{\textasciitilde{}}\NormalTok{.)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/review3-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# finally, an alternative to removing the outliers would be to log{-}transform the y{-}axis}
+\CommentTok{\# But be careful, this removes a lot of the data because the log of 0 is undefined}
+\NormalTok{bmps }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ StateAbbreviation, }\AttributeTok{y =}\NormalTok{ AmountCredited)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{fill =}\NormalTok{ StateAbbreviation)) }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_log10}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{y =} \StringTok{"log10(AmountCredited)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in scale_y_log10(): log-10 transformation introduced infinite values.
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: Removed 15585 rows containing non-finite outside the scale range
+## (`stat_boxplot()`).
+\end{verbatim}
+
+\includegraphics{lab02_files/figure-latex/review3-4.pdf}
+
+The last new item uses the \texttt{\%in\%} command. It's a way to
+quickly figure out which elements are inside of another. In that sense,
+it's similar to a spatial intersection, but for other types of data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# setup a demonstration vector}
+\NormalTok{x }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DecValTok{5}\NormalTok{)}
+
+\CommentTok{\# is 7 in our vector?}
+\DecValTok{7} \SpecialCharTok{\%in\%}\NormalTok{ x }\CommentTok{\# should evaluate False}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] FALSE
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DecValTok{2} \SpecialCharTok{\%in\%}\NormalTok{ x }\CommentTok{\# should evaluate True}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] TRUE
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# can also do it with vectors}
+\FunctionTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{99}\NormalTok{, }\DecValTok{1}\NormalTok{) }\SpecialCharTok{\%in\%}\NormalTok{ x}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1]  TRUE FALSE  TRUE
+\end{verbatim}
+
+Lastly, let's recall using tmap on our data. Also remember you can use
+\texttt{sf::st\_make\_valid} to fix offending geometry
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{counties }\OtherTok{\textless{}{-}}\NormalTok{ sf}\SpecialCharTok{::}\FunctionTok{read\_sf}\NormalTok{(}\StringTok{"../Lab\_2/CBW/County\_Boundaries.shp"}\NormalTok{)}
+\NormalTok{counties }\SpecialCharTok{\%\textgreater{}\%}\NormalTok{ sf}\SpecialCharTok{::}\FunctionTok{st\_is\_valid}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   [1]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [13]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [25]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [37]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [49]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [61]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [73]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [85]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+##  [97]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [109]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [121]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [133]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [145]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [157]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [169]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [181]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [193]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+## [205]  TRUE FALSE  TRUE
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{counties }\OtherTok{\textless{}{-}}\NormalTok{ counties }\SpecialCharTok{\%\textgreater{}\%}\NormalTok{ sf}\SpecialCharTok{::}\FunctionTok{st\_make\_valid}\NormalTok{()}
+
+\CommentTok{\# quick map of the data}
+\FunctionTok{tm\_shape}\NormalTok{(counties) }\SpecialCharTok{+} \FunctionTok{tm\_polygons}\NormalTok{(}\AttributeTok{fill =} \StringTok{"ALAND10"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/remembering tmap-1.pdf}
+
+\newpage
+
+\subsection{Your tasks}\label{your-tasks}
+
+Using the following data\ldots{}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# spatial}
+\CommentTok{\# Note, the st\_make\_valid() calls are NOT necessary in all cases}
+\CommentTok{\# But we know it\textquotesingle{}s needed for the counties, and doesn\textquotesingle{}t really hurt anything}
+\CommentTok{\# for the others}
+\NormalTok{counties }\OtherTok{\textless{}{-}}\NormalTok{ sf}\SpecialCharTok{::}\FunctionTok{read\_sf}\NormalTok{(}\StringTok{"../Lab\_2/CBW/County\_Boundaries.shp"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+\NormalTok{  sf}\SpecialCharTok{::}\FunctionTok{st\_make\_valid}\NormalTok{()}
+\NormalTok{dams }\OtherTok{\textless{}{-}}\NormalTok{ sf}\SpecialCharTok{::}\FunctionTok{read\_sf}\NormalTok{(}\StringTok{"../Lab\_2/CBW/Dam\_or\_Other\_Blockage\_Removed\_2012\_2017.shp"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+\NormalTok{  sf}\SpecialCharTok{::}\FunctionTok{st\_make\_valid}\NormalTok{()}
+\NormalTok{streams }\OtherTok{\textless{}{-}}\NormalTok{ sf}\SpecialCharTok{::}\FunctionTok{read\_sf}\NormalTok{(}\StringTok{"../Lab\_2/CBW/Streams\_Opened\_by\_Dam\_Removal\_2012\_2017.shp"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+\NormalTok{  sf}\SpecialCharTok{::}\FunctionTok{st\_make\_valid}\NormalTok{()}
+
+\CommentTok{\# aspatial}
+\NormalTok{bmps }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"../Lab\_2/CBW/BMPreport2016\_landbmps.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 69601 Columns: 18
+## -- Column specification --------------------------------------------------------
+## Delimiter: ","
+## chr (11): StateAbbreviation, GeographyName, Geography, Agency, BMPShortName,...
+## dbl  (7): AmountSubmitted, AmountBackedOut, AmountNotBackedOut, AmountCredit...
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+\end{verbatim}
+
+\ldots complete the following tasks.
+
+Complete each task COMPLETELY USING R CODE. YOU MUST SHOW YOUR WORK FOR
+EACH ANSWER. Label your variables sensibly and use comments such that I
+can find your answers and your work. The following tasks draw upon
+lecture, your assigned readings, and the examples shown above. As
+always, there are multiple ways of completing each task. Remember, it's
+always a good idea to perform some exploratory data analysis on your own
+prior to starting work.
+
+\subsubsection{Task 1: Aspatial
+operations}\label{task-1-aspatial-operations}
+
+1.1 Calculate summary statistics for the Cost of BMPs for each State
+(including DC)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#summary stats including DC}
+\FunctionTok{by}\NormalTok{(bmps}\SpecialCharTok{$}\NormalTok{Cost, bmps}\SpecialCharTok{$}\NormalTok{StateAbbreviation, summary)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## bmps$StateAbbreviation: DC
+##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max.      NA's 
+##       0.1      26.7     628.6   22192.8    5000.7 1891063.7         8 
+## ------------------------------------------------------------ 
+## bmps$StateAbbreviation: DE
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+##       0      16     906   30682   11574 5041838     238 
+## ------------------------------------------------------------ 
+## bmps$StateAbbreviation: MD
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+##        0        2      876    53118    10229 12086857     2151 
+## ------------------------------------------------------------ 
+## bmps$StateAbbreviation: NY
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+##      0.0    335.1   1954.4   8128.7   6978.7 622138.0      721 
+## ------------------------------------------------------------ 
+## bmps$StateAbbreviation: PA
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+##        0        0      431    59904     5954 19968186     3565 
+## ------------------------------------------------------------ 
+## bmps$StateAbbreviation: VA
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+##        0        0       15    25380     1240 39731974     7002 
+## ------------------------------------------------------------ 
+## bmps$StateAbbreviation: WV
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+##        0        0       97    50014     1176 15796521      601
+\end{verbatim}
+
+1.2 Make a scatterplot of Cost vs.~TotalAmountCredited, ONLY FOR BMPs
+with \texttt{Units} of type ``Acres''. You may need to apply a data
+transformation to one or more axes if the data are heavily skewed.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#select BMPs with units of Acres}
+\NormalTok{Acres\_bmps }\OtherTok{\textless{}{-}}\NormalTok{ bmps }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{filter}\NormalTok{(Unit}\SpecialCharTok{==}\StringTok{"Acres"}\NormalTok{)}
+
+\CommentTok{\#make scatterplot}
+\NormalTok{acre\_scatter }\OtherTok{\textless{}{-}}
+  \FunctionTok{ggplot}\NormalTok{(Acres\_bmps, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Cost, }\AttributeTok{y =}\NormalTok{ TotalAmountCredited)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{()}
+
+\NormalTok{acre\_scatter}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Removed 170 rows containing missing values or values outside the scale range
+## (`geom_point()`).
+\end{verbatim}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-2-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#need to transform this data{-} starting with y axis}
+\NormalTok{y\_log\_scatter }\OtherTok{\textless{}{-}}
+\NormalTok{  Acres\_bmps }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Cost, }\AttributeTok{y =}\NormalTok{ TotalAmountCredited)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{scale\_y\_log10}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}\AttributeTok{y =} \StringTok{"log10(TotalAmountCredited)"}\NormalTok{)}
+
+\NormalTok{y\_log\_scatter}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in scale_y_log10(): log-10 transformation introduced infinite values.
+## Removed 170 rows containing missing values or values outside the scale range
+## (`geom_point()`).
+\end{verbatim}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-2-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#trying x axis instead}
+\NormalTok{x\_log\_scatter }\OtherTok{\textless{}{-}}
+\NormalTok{  Acres\_bmps }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Cost, }\AttributeTok{y =}\NormalTok{ TotalAmountCredited)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{scale\_x\_log10}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"log10(Cost)"}\NormalTok{)}
+
+\NormalTok{x\_log\_scatter}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in scale_x_log10(): log-10 transformation introduced infinite values.
+## Removed 170 rows containing missing values or values outside the scale range
+## (`geom_point()`).
+\end{verbatim}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-2-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#both were pretty bad, trying them at the same time}
+\NormalTok{log\_scatter }\OtherTok{\textless{}{-}}
+\NormalTok{  Acres\_bmps }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{ggplot}\NormalTok{(., }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Cost, }\AttributeTok{y =}\NormalTok{ TotalAmountCredited)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{scale\_x\_log10}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{scale\_y\_log10}\NormalTok{ () }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"log10(Cost)"}\NormalTok{,}
+         \AttributeTok{y =} \StringTok{"log10(TotalAmountCredited)"}\NormalTok{)}
+
+\NormalTok{log\_scatter}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in scale_x_log10(): log-10 transformation introduced infinite values.
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in scale_y_log10(): log-10 transformation introduced infinite values.
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: Removed 170 rows containing missing values or values outside the scale range
+## (`geom_point()`).
+\end{verbatim}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-2-4.pdf}
+
+1.3 Make a boxplot with ``StateAbbreviation'' on the x-axis and
+``TotalAmountCredited'' on the y-axis. HOWEVER, the only data I want
+plotted are for cover crop BMPs. Note, there are many types of cover
+crops in this dataset, and I want you to include them ALL. There are
+handy functions within the \texttt{stringr} package that can help you
+here. Use the help function \texttt{?stringr} or read the
+documentations/vignettes found online. A Google search for ``r stringr
+vignettes documentation'' would be a good place to start if you're
+having trouble.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#filtering for only cover crop bmps}
+\CommentTok{\#looking at different types of bmps}
+\FunctionTok{unique}\NormalTok{(bmps}\SpecialCharTok{$}\NormalTok{BMP)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   [1] "Wet Ponds and Wetlands"                                                                         
+##   [2] "Dry Detention Ponds and Hydrodynamic Structures"                                                
+##   [3] "Filtering Practices"                                                                            
+##   [4] "Stormwater Performance Standard-Runoff Reduction"                                               
+##   [5] "Bioretention/raingardens - A/B soils, underdrain"                                               
+##   [6] "Bioswale"                                                                                       
+##   [7] "Vegetated Open Channels - A/B soils, no underdrain"                                             
+##   [8] "Permeable Pavement w/o Sand, Veg. - A/B soils, no underdrain"                                   
+##   [9] "Bioretention/raingardens - C/D soils, underdrain"                                               
+##  [10] "Urban Stream Restoration"                                                                       
+##  [11] "Infiltration Practices w/o Sand, Veg. - A/B soils, no underdrain"                               
+##  [12] "Impervious Surface Reduction"                                                                   
+##  [13] "Stormwater Performance Standard-Stormwater Treatment"                                           
+##  [14] "Tree Planting - Canopy"                                                                         
+##  [15] "Advanced Sweeping Technology - 2 pass/week"                                                     
+##  [16] "Advanced Sweeping Technology - 1 pass/week"                                                     
+##  [17] "Advanced Sweeping Technology - 1 pass/2 weeks"                                                  
+##  [18] "Advanced Sweeping Technology - 1 pass/4 weeks"                                                  
+##  [19] "Advanced Sweeping Technology - 1 pass/8 weeks"                                                  
+##  [20] "Advanced Sweeping Technology - 1 pass/12 weeks"                                                 
+##  [21] "Separation of stormwater and sewer systems"                                                     
+##  [22] "Erosion and Sediment Control Level 1"                                                           
+##  [23] "Soil Conservation and Water Quality Plans"                                                      
+##  [24] "Forest Buffer"                                                                                  
+##  [25] "Tree Planting"                                                                                  
+##  [26] "Land Retirement to Ag Open Space"                                                               
+##  [27] "Grass Buffer"                                                                                   
+##  [28] "Off Stream Watering Without Fencing"                                                            
+##  [29] "Precision Intensive Rotational/Prescribed Grazing"                                              
+##  [30] "Water Control Structures"                                                                       
+##  [31] "Dry Extended Detention Ponds"                                                                   
+##  [32] "Infiltration Practices w/ Sand, Veg. - A/B soils, no underdrain"                                
+##  [33] "Forest Harvesting Practices"                                                                    
+##  [34] "Cover Crop Traditional Wheat Early Drilled"                                                     
+##  [35] "Cover Crop Traditional Wheat Early Other"                                                       
+##  [36] "Barnyard Runoff Control"                                                                        
+##  [37] "Cover Crop Traditional Wheat Normal Drilled"                                                    
+##  [38] "Cover Crop Traditional Wheat Normal Other"                                                      
+##  [39] "Cover Crop Traditional Wheat Late Other"                                                        
+##  [40] "Cover Crop Traditional Barley Early Drilled"                                                    
+##  [41] "Cover Crop Traditional Barley Early Other"                                                      
+##  [42] "Cover Crop Traditional Barley Early Aerial"                                                     
+##  [43] "Cover Crop Traditional Barley Normal Other"                                                     
+##  [44] "Cover Crop Commodity Early"                                                                     
+##  [45] "Cover Crop Commodity Normal"                                                                    
+##  [46] "Cover Crop Commodity Late"                                                                      
+##  [47] "Tillage Management-Conservation"                                                                
+##  [48] "Nutrient Management Core N"                                                                     
+##  [49] "Nutrient Management Core P"                                                                     
+##  [50] "Grass Buffer-Streamside with Exclusion Fencing"                                                 
+##  [51] "Cover Crop Traditional Triticale Normal Other"                                                  
+##  [52] "Tillage Management-Continuous High Residue"                                                     
+##  [53] "Septic Denitrification - Conventional"                                                          
+##  [54] "Septic Connection"                                                                              
+##  [55] "Septic Pumping"                                                                                 
+##  [56] "Wetland Restoration - Floodplain"                                                               
+##  [57] "Grass Buffer-Streamside with Exclusion Fencing Nitrogen Upland Acres"                           
+##  [58] "Grass Buffer Nitrogen Upland Acres"                                                             
+##  [59] "Forest Buffer Nitrogen Upland Acres"                                                            
+##  [60] "Forest Buffer Phosphorus and Sediment Upland Acres"                                             
+##  [61] "Grass Buffer Phosphorus and Sediment Upland Acres"                                              
+##  [62] "Grass Buffer-Streamside with Exclusion Fencing Phosphorus and Sediment Upland Acres"            
+##  [63] "Wetland Restoration Upland Acres"                                                               
+##  [64] "Non Urban Stream Restoration"                                                                   
+##  [65] "Cover Crop Traditional Rye Early Other"                                                         
+##  [66] "Cover Crop Traditional Rye Early Aerial"                                                        
+##  [67] "Cover Crop Traditional Rye Normal Drilled"                                                      
+##  [68] "Cover Crop Traditional Rye Normal Other"                                                        
+##  [69] "Cover Crop Traditional Rye Late Drilled"                                                        
+##  [70] "Cover Crop Traditional Rye Late Other"                                                          
+##  [71] "Cover Crop Traditional Wheat Early Aerial"                                                      
+##  [72] "Cover Crop Traditional Wheat Late Drilled"                                                      
+##  [73] "Cover Crop Traditional Barley Normal Drilled"                                                   
+##  [74] "Cover Crop Traditional Forage Radish Early Other"                                               
+##  [75] "Cover Crop Traditional Forage Radish Early Aerial"                                              
+##  [76] "Cover Crop Traditional Annual Legume Early Other"                                               
+##  [77] "Cover Crop Traditional Annual Legume Early Aerial"                                              
+##  [78] "Cover Crop Traditional Triticale Early Drilled"                                                 
+##  [79] "Cover Crop Traditional Triticale Early Other"                                                   
+##  [80] "Cover Crop Traditional Triticale Early Aerial"                                                  
+##  [81] "Cover Crop Traditional Triticale Late Drilled"                                                  
+##  [82] "Cover Crop Traditional Triticale Late Other"                                                    
+##  [83] "Cover Crop Traditional Annual Ryegrass Early Aerial"                                            
+##  [84] "Mechanical Broom Technology - 1 pass/4 weeks"                                                   
+##  [85] "Cover Crop Traditional Oats, Winter Killed Early Other"                                         
+##  [86] "Cover Crop Traditional Brassica Early Other"                                                    
+##  [87] "Cover Crop Traditional Brassica Early Aerial"                                                   
+##  [88] "Urban Forest Buffer Upland Acres"                                                               
+##  [89] "Advanced Grey Infrastructure Nutrient Discovery Program (IDDE)"                                 
+##  [90] "Grass Buffer-Narrow with Exclusion Fencing"                                                     
+##  [91] "Land Retirement to Pasture"                                                                     
+##  [92] "Forest Buffer-Streamside with Exclusion Fencing"                                                
+##  [93] "Horse Pasture Management"                                                                       
+##  [94] "Impervious Disconnection to amended soils"                                                      
+##  [95] "Cover Crop Traditional Rye Early Drilled"                                                       
+##  [96] "Forest Planting"                                                                                
+##  [97] "Loafing Lot Management"                                                                         
+##  [98] "Manure Injection"                                                                               
+##  [99] "Manure Incorporation Low Disturbance Late"                                                      
+## [100] "Nutrient Management Maryland Commercial Applicators"                                            
+## [101] "Nutrient Management Maryland Do It Yourself"                                                    
+## [102] "Cover Crop Traditional Triticale Normal Drilled"                                                
+## [103] "Erosion and Sediment Control Level 2"                                                           
+## [104] "Forest Buffer-Streamside with Exclusion Fencing Nitrogen Upland Acres"                          
+## [105] "Forest Buffer-Streamside with Exclusion Fencing Phosphorus and Sediment Upland Acres"           
+## [106] "Cover Crop Traditional Oats, Winter Hardy Early Drilled"                                        
+## [107] "Cover Crop Traditional Oats, Winter Hardy Early Aerial"                                         
+## [108] "Cover Crop Traditional Brassica Early Drilled"                                                  
+## [109] "Wetland Creation - Floodplain"                                                                  
+## [110] "Wetland Creation Upland Acres"                                                                  
+## [111] "Forest Buffer-Narrow with Exclusion Fencing"                                                    
+## [112] "Urban Shoreline Management"                                                                     
+## [113] "Dirt & Gravel Road Erosion & Sediment Control - Driving Surface Aggregate + Raising the Roadbed"
+## [114] "Non Urban Shoreline Management"                                                                 
+## [115] "Cover Crop Traditional Annual Ryegrass Early Drilled"                                           
+## [116] "Cover Crop Traditional Oats, Winter Hardy Normal Drilled"                                       
+## [117] "Alternative Crops"                                                                              
+## [118] "Abandoned Mine Reclamation"                                                                     
+## [119] "Cover Crop Traditional with Fall Nutrients Rye Normal Drilled"                                  
+## [120] "Tillage Management-Low Residue"                                                                 
+## [121] "Nutrient Management N Rate"                                                                     
+## [122] "Nutrient Management P Rate"                                                                     
+## [123] "Nutrient Management N Placement"                                                                
+## [124] "Nutrient Management P Placement"                                                                
+## [125] "Nutrient Management N Timing"                                                                   
+## [126] "Nutrient Management P Timing"                                                                   
+## [127] "Forest Buffer - Narrow"                                                                         
+## [128] "Grass Buffer - Narrow"                                                                          
+## [129] "Cover Crop Traditional with Fall Nutrients Rye Normal Other"                                    
+## [130] "Wetland Enhancement"                                                                            
+## [131] "Wetland Enhancement Upland Acres"                                                               
+## [132] "Non Urban Shoreline Erosion Control Non-Vegetated"                                              
+## [133] "Urban Shoreline Erosion Control Non-Vegetated"                                                  
+## [134] "Cover Crop Traditional Annual Legume Normal Drilled"                                            
+## [135] "Nutrient Management Plan"                                                                       
+## [136] "Permeable Pavement w/o Sand, Veg. - C/D soils, underdrain"                                      
+## [137] "Septic Secondary Treatment - Enhanced"                                                          
+## [138] "Septic Secondary Treatment - Conventional"                                                      
+## [139] "Vegetated Open Channels - C/D soils, no underdrain"                                             
+## [140] "Permeable Pavement w/ Sand, Veg. - A/B soils, no underdrain"                                    
+## [141] "Permeable Pavement w/ Sand, Veg. - C/D soils, underdrain"                                       
+## [142] "Cover Crop Traditional with Fall Nutrients Wheat Early Other"                                   
+## [143] "Septic Denitrification - Enhanced"                                                              
+## [144] "Bioretention/raingardens - A/B soils, no underdrain"                                            
+## [145] "Septic Effluent - Enhanced"                                                                     
+## [146] "Urban Shoreline Erosion Control Vegetated"                                                      
+## [147] "Permeable Pavement w/ Sand, Veg. - A/B soils, underdrain"                                       
+## [148] "Permeable Pavement w/o Sand, Veg. - A/B soils, underdrain"                                      
+## [149] "Filter Strip Runoff Reduction"                                                                  
+## [150] "Filter Strip Stormwater Treatment"                                                              
+## [151] "Cover Crop Traditional with Fall Nutrients Rye Early Other"                                     
+## [152] "Cover Crop Traditional with Fall Nutrients Wheat Normal Other"                                  
+## [153] "Cover Crop Traditional Forage Radish Early Drilled"                                             
+## [154] "Cover Crop Traditional Legume Plus Grass 25-50% Early Drilled"                                  
+## [155] "Cover Crop Traditional Legume Plus Grass 25-50% Early Other"                                    
+## [156] "Cover Crop Traditional Annual Legume Early Drilled"                                             
+## [157] "Cover Crop Traditional Forage Radish Plus Early Drilled"                                        
+## [158] "Cover Crop Traditional Forage Radish Plus Normal Drilled"                                       
+## [159] "Cover Crop Traditional Legume Plus Grass 25-50% Normal Drilled"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cover\_crop }\OtherTok{\textless{}{-}}
+\NormalTok{  bmps }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{filter}\NormalTok{(}\FunctionTok{str\_detect}\NormalTok{(BMP, }\StringTok{"Cover Crop"}\NormalTok{)) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ StateAbbreviation, }\AttributeTok{y =}\NormalTok{ TotalAmountCredited)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_boxplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{fill =}\NormalTok{ StateAbbreviation)) }
+
+\NormalTok{cover\_crop}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+1.4 make a scatterplot of the \texttt{dam} dataset, this time with
+``YEAR'' on the x-axis and ``STATE'' on y-axis (think of it like a
+timeline). Assume no dams were built in year 0, so you'll need to remove
+those data points. You know how to remove observations based on a given
+criteria.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#remove year 0 from dams and plot!}
+\NormalTok{dams\_new }\OtherTok{\textless{}{-}}\NormalTok{ dams }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{filter}\NormalTok{(YEAR }\SpecialCharTok{!=} \DecValTok{0}\NormalTok{) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ YEAR, }\AttributeTok{y =}\NormalTok{ STATE)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_point}\NormalTok{() }
+  
+\NormalTok{dams\_new}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+1.5 make one last (aspatial) visualization. But this time, it's your
+choice what data and plots to use. The only requirement is that you link
+two of the datasets together in some manner. Be creative. Make it look
+nice (e.g., use proper labels, interesting colors/shading/size).
+
+\subsubsection{Task 2: Spatial
+operations}\label{task-2-spatial-operations}
+
+2.1 Find the 5 longest streams in the `streams opened by dam removal'
+dataset
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#group by GNIS name}
+\NormalTok{stream\_length}\OtherTok{\textless{}{-}}\NormalTok{ streams }\SpecialCharTok{|\textgreater{}} \FunctionTok{group\_by}\NormalTok{(GNIS\_Name) }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(GNIS\_Name)) }\SpecialCharTok{|\textgreater{}} \CommentTok{\#remove unnamed rivers}
+  \FunctionTok{summarize}\NormalTok{(}\AttributeTok{TotalLength=}\FunctionTok{sum}\NormalTok{(LengthKM)) }
+  
+
+\NormalTok{stream\_length}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Simple feature collection with 113 features and 2 fields
+## Geometry type: GEOMETRY
+## Dimension:     XY
+## Bounding box:  xmin: -79.21001 ymin: 37.23123 xmax: -75.53429 ymax: 41.75646
+## Geodetic CRS:  WGS 84
+## # A tibble: 113 x 3
+##    GNIS_Name        TotalLength                                         geometry
+##    <chr>                  <dbl>                                   <GEOMETRY [°]>
+##  1 Adams Run              1.16  LINESTRING (-76.39092 40.59092, -76.39099 40.59~
+##  2 Appomattox River       0.466 LINESTRING (-77.4212 37.23123, -77.42115 37.231~
+##  3 Back Creek            14.9   LINESTRING (-78.98025 37.92897, -78.97991 37.92~
+##  4 Barr Run               2.15  LINESTRING (-78.266 41.56257, -78.26632 41.5624~
+##  5 Barren Creek          11.2   LINESTRING (-75.63235 38.4521, -75.63236 38.452~
+##  6 Big Run                5.48  MULTILINESTRING ((-78.36152 41.56917, -78.36288~
+##  7 Billy Buck Run         2.44  LINESTRING (-78.42342 41.59632, -78.42362 41.59~
+##  8 Blackwater Creek      20.0   MULTILINESTRING ((-75.62309 38.4635, -75.6231 3~
+##  9 Bobby Run              8.10  LINESTRING (-78.41307 41.5404, -78.41263 41.540~
+## 10 Brewer Fork            3.13  LINESTRING (-78.37411 41.6047, -78.37444 41.604~
+## # i 103 more rows
+\end{verbatim}
+
+2.2 Find the three counties with the greatest TOTAL length of streams
+(opened by dam removal) in them
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#find what counties contain the highest number of streams}
+\NormalTok{counties\_streams }\OtherTok{\textless{}{-}} \FunctionTok{st\_join}\NormalTok{(counties, streams, }\AttributeTok{join =}\NormalTok{ st\_intersects, }\AttributeTok{left=}\ConstantTok{FALSE}\NormalTok{) }\CommentTok{\#inner join}
+
+\CommentTok{\# all counties and rivers}
+\FunctionTok{tm\_shape}\NormalTok{(counties) }\SpecialCharTok{+} \FunctionTok{tm\_polygons}\NormalTok{(}\AttributeTok{fill=}\StringTok{"grey"}\NormalTok{) }\SpecialCharTok{+} \FunctionTok{tm\_shape}\NormalTok{(streams) }\SpecialCharTok{+} \FunctionTok{tm\_lines}\NormalTok{(}\AttributeTok{col =} \StringTok{"blue"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#quick map to check}
+\FunctionTok{tm\_shape}\NormalTok{(counties) }\SpecialCharTok{+} \FunctionTok{tm\_polygons}\NormalTok{(}\AttributeTok{fill=}\StringTok{"grey"}\NormalTok{) }\SpecialCharTok{+} \FunctionTok{tm\_shape}\NormalTok{(counties\_streams) }\SpecialCharTok{+} \FunctionTok{tm\_lines}\NormalTok{(}\AttributeTok{col =} \StringTok{"blue"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{lab02_files/figure-latex/unnamed-chunk-7-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#top 3 counties with greatest total length of streams}
+\NormalTok{counties\_streams }\SpecialCharTok{|\textgreater{}} \FunctionTok{group\_by}\NormalTok{(COUNTYFP10) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{summarize}\NormalTok{(}\AttributeTok{AllStreamLength=}\FunctionTok{sum}\NormalTok{(LengthKM)) }\SpecialCharTok{|\textgreater{}}
+  \FunctionTok{slice\_max}\NormalTok{(AllStreamLength, }\AttributeTok{n=}\DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Simple feature collection with 3 features and 2 fields
+## Geometry type: POLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -79.53331 ymin: 37.88159 xmax: -77.67661 ymax: 41.61821
+## Geodetic CRS:  WGS 84
+## # A tibble: 3 x 3
+##   COUNTYFP10 AllStreamLength                                            geometry
+##   <chr>                <dbl>                                       <POLYGON [°]>
+## 1 015                   425. ((-79.36744 38.0179, -79.35294 38.00927, -79.34872~
+## 2 061                   309. ((-78.14963 40.1743, -78.14926 40.17408, -78.14071~
+## 3 023                   242. ((-78.25396 41.40335, -78.25398 41.39962, -78.2540~
+\end{verbatim}
+
+2.3 Make a map of the counties, shading each county by the total cost of
+BMPs funded/implemented in that county. This will require you to join
+multiple datasets together
+
+2.4 For each removed dam, find the closest stream segment
+
+2.5 Calculate how many removed dams are (or were) in each state
+
+\end{document}

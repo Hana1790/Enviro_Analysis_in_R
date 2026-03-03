@@ -232,16 +232,18 @@ Complete each task COMPLETELY USING R CODE. YOU MUST SHOW YOUR WORK FOR EACH ANS
 1.1 Calculate summary statistics for the Cost of BMPs for each State (including DC)
 ```{r}
 #summary stats including DC
-by(bmps$Cost, bmps$StateAbbreviation, summary)
+by(bmps$Cost, bmps$StateAbbreviation, summary) #applies a function to a dataset
 
 ```
 
 
 1.2 Make a scatterplot of Cost vs. TotalAmountCredited, ONLY FOR BMPs with `Units` of type "Acres". You may need to apply a data transformation to one or more axes if the data are heavily skewed.
 ```{r}
+library(ggplot)
+
 #select BMPs with units of Acres
 Acres_bmps <- bmps |>
-  filter(Unit=="Acres")
+  filter(Unit=="Acres") 
 
 #make scatterplot
 acre_scatter <-
@@ -274,7 +276,7 @@ x_log_scatter
 log_scatter <-
   Acres_bmps %>%
     ggplot(., aes(x = Cost, y = TotalAmountCredited)) +
-    geom_point() +
+    geom_point(aes(color=StateAbbreviation)) +
     scale_x_log10() +
     scale_y_log10 () +
     labs(x = "log10(Cost)",
@@ -311,6 +313,22 @@ dams_new
 
 1.5 make one last (aspatial) visualization. But this time, it's your choice what data and plots to use. The only requirement is that you link two of the datasets together in some manner. Be creative. Make it look nice (e.g., use proper labels, interesting colors/shading/size).
 ```{r}
+#number of streams opened by dams
+#left join streams and dams
+new_df <- dams |> as_tibble() |> select(-geometry) |> #prevents it from being a spatial join
+  left_join(streams, by=c("DamRemoval"), relationship= "many-to-many",
+            suffix=c("_dams","_streams")) #renames columns that are shared
+
+#group by dam name
+new_df |> group_by(DAM_NAME_dams) |>
+  mutate(TotalLengthStreams= sum(LengthKM, na.rm=TRUE), .groups="drop") |>
+  ggplot() +
+  geom_bar(aes(x=DAM_NAME_dams, y=TotalLengthStreams, fill=STATE_dams), stat="identity")+ #change from count to total length
+  scale_fill_manual(values = c("tomato2", "tan3", "dodgerblue4"), name = "State") +
+  labs(x="Removed Dam Names", y="Total Stream Length (km)",
+       title="Dams and the Total Length of Streams Opened by Removal in km") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=90))
 
 ```
 
@@ -320,29 +338,70 @@ dams_new
 2.1 Find the 5 longest streams in the 'streams opened by dam removal' dataset
 ```{r}
 #group by GNIS name
-streams |> group_by(GNIS_Name) |>
-  sum
+streams |> group_by(GNIS_Name) |> 
+  filter(!is.na(GNIS_Name)) |> #remove unnamed rivers
+  summarize(TotalLength=sum(LengthKM)) |>
+  slice_max(TotalLength, n=5)
+  
 ```
 
 2.2 Find the three counties with the greatest TOTAL length of streams (opened by dam removal) in them
 ```{r}
+#find what counties contain the highest number of streams
+counties_streams <- st_join(counties, streams, join = st_intersects, left=FALSE,
+                            suffix = c("_ct", "_streams")) #inner join
 
+# all counties and rivers
+tm_shape(counties) + tm_polygons(fill="grey") + tm_shape(streams) + tm_lines(col = "blue")
+
+#quick map to check
+tm_shape(counties) + tm_polygons(fill="grey") + tm_shape(counties_streams) + tm_lines(col = "blue")
+
+#top 3 counties with greatest total length of streams
+counties_streams |> as_tibble() |> select(-geometry) |>
+ group_by(COUNTYFP10) |>
+  summarize(AllStreamLength=sum(LengthKM)) |>
+  slice_max(AllStreamLength, n=3)
 ```
 
 2.3 Make a map of the counties, shading each county by the total cost of BMPs funded/implemented in that county. This will require you to join multiple datasets together
 ```{r}
+#getting the county FIPS code pulled out of BMPs again
+unique_bmps <- bmps |> mutate(COUNTYFP10 = stringr::str_sub(GeographyName, 3, 5),
+                       STATEFP10 = stringr::str_sub(GeographyName, 1, 2)) |>
+                       group_by(STATEFP10, COUNTYFP10) |>
+                summarize(TotalCost = sum(Cost, na.rm=TRUE), .groups="drop") |>
+                distinct() #keep only the unique state and counties
+
+#unique counties
+unique_counties <- counties |>
+  select(STATEFP10, COUNTYFP10, geometry) |>
+  distinct() 
+
+#combine counties and BMPS by STATE and COUNTY FP10
+Counties_BMPS <- unique_counties |> left_join(unique_bmps, by = c("COUNTYFP10","STATEFP10")) 
+                                  
+#map of counties by BMP cost
+tm_shape(Counties_BMPS) + tm_polygons(fill="TotalCost")
 
 ```
 
 2.4 For each removed dam, find the closest stream segment
 ```{r}
+nearest_index <- st_nearest_feature(dams, streams) #finds the index number of streams that are the closest to the dams
 
+nearest_stream <- streams[nearest_index, "GNIS_Name"] |> as_tibble() |> select(-geometry) |> cbind(dams$DAM_NAME) #gets the index number and then connects it to dam name
+
+nearest_stream
 ```
 
 2.5 Calculate how many removed dams are (or were) in each state
 
 ```{r}
-
+dams |>
+  group_by(STATE) |>
+  summarise(n_dams=n()) |> #counts number of rows and names it "n_dams"
+  st_drop_geometry() #just remembered this
 ```
 
 
