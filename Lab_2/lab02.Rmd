@@ -47,6 +47,7 @@ Non-spatial datasets
 library(tidyverse)
 library(sf)
 library(tmap)
+library(ggplot2)
 ```
 
 
@@ -239,7 +240,6 @@ by(bmps$Cost, bmps$StateAbbreviation, summary) #applies a function to a dataset
 
 1.2 Make a scatterplot of Cost vs. TotalAmountCredited, ONLY FOR BMPs with `Units` of type "Acres". You may need to apply a data transformation to one or more axes if the data are heavily skewed.
 ```{r}
-library(ggplot)
 
 #select BMPs with units of Acres
 Acres_bmps <- bmps |>
@@ -281,21 +281,21 @@ log_scatter <-
     scale_y_log10 () +
     labs(x = "log10(Cost)",
          y = "log10(TotalAmountCredited)")
-
+#probably the best this is going to get
 log_scatter
 ```
 
 1.3 Make a boxplot with "StateAbbreviation" on the x-axis and "TotalAmountCredited" on the y-axis. HOWEVER, the only data I want plotted are for cover crop BMPs. Note, there are many types of cover crops in this dataset, and I want you to include them ALL. There are handy functions within the ```stringr``` package that can help you here. Use the help function ```?stringr``` or read the documentations/vignettes found online. A Google search for "r stringr vignettes documentation" would be a good place to start if you're having trouble.
 ```{r}
-#filtering for only cover crop bmps
 #looking at different types of bmps
 unique(bmps$BMP)
 
+#filtering for only cover crop bmps
 cover_crop <-
   bmps |> 
   filter(str_detect(BMP, "Cover Crop")) |>
   ggplot(aes(x = StateAbbreviation, y = TotalAmountCredited)) +
-    geom_boxplot(aes(fill = StateAbbreviation)) 
+    geom_boxplot(aes(fill = StateAbbreviation)) #for fun
 
 cover_crop
 ```
@@ -304,7 +304,7 @@ cover_crop
 ```{r}
 #remove year 0 from dams and plot!
 dams_new <- dams |>
-  filter(YEAR != 0) |>
+  filter(YEAR != 0) |> #not in the year 0
   ggplot(aes(x = YEAR, y = STATE)) +
     geom_point() 
   
@@ -313,22 +313,25 @@ dams_new
 
 1.5 make one last (aspatial) visualization. But this time, it's your choice what data and plots to use. The only requirement is that you link two of the datasets together in some manner. Be creative. Make it look nice (e.g., use proper labels, interesting colors/shading/size).
 ```{r}
-#number of streams opened by dams
+#Total length of streams opened by dam removals
+
 #left join streams and dams
 new_df <- dams |> as_tibble() |> select(-geometry) |> #prevents it from being a spatial join
   left_join(streams, by=c("DamRemoval"), relationship= "many-to-many",
-            suffix=c("_dams","_streams")) #renames columns that are shared
+            suffix=c("_dams","_streams")) #renames columns that are shared to specify
 
 #group by dam name
-new_df |> group_by(DAM_NAME_dams) |>
-  mutate(TotalLengthStreams= sum(LengthKM, na.rm=TRUE), .groups="drop") |>
-  ggplot() +
+new_df <- new_df |> group_by(DAM_NAME_dams) |> #renamed, new variable wasn't showing up
+  mutate(TotalLengthStreams= sum(LengthKM, na.rm=TRUE), .groups="drop")  #sum length of streams
+ 
+new_df |> ggplot() +
   geom_bar(aes(x=DAM_NAME_dams, y=TotalLengthStreams, fill=STATE_dams), stat="identity")+ #change from count to total length
-  scale_fill_manual(values = c("tomato2", "tan3", "dodgerblue4"), name = "State") +
+  scale_fill_manual(values = c("tomato2", "tan3", "dodgerblue4"), name = "State") + #color by state
   labs(x="Removed Dam Names", y="Total Stream Length (km)",
        title="Dams and the Total Length of Streams Opened by Removal in km") +
   theme_bw()+
-  theme(axis.text.x = element_text(angle=90))
+  theme(axis.text.x = element_text(angle=90)) #rotate text
+
 
 ```
 
@@ -361,22 +364,22 @@ tm_shape(counties) + tm_polygons(fill="grey") + tm_shape(counties_streams) + tm_
 counties_streams |> as_tibble() |> select(-geometry) |>
  group_by(COUNTYFP10) |>
   summarize(AllStreamLength=sum(LengthKM)) |>
-  slice_max(AllStreamLength, n=3)
+  slice_max(AllStreamLength, n=3) #gives the top 3 counties
 ```
 
 2.3 Make a map of the counties, shading each county by the total cost of BMPs funded/implemented in that county. This will require you to join multiple datasets together
 ```{r}
 #getting the county FIPS code pulled out of BMPs again
-unique_bmps <- bmps |> mutate(COUNTYFP10 = stringr::str_sub(GeographyName, 3, 5),
+unique_bmps <- bmps |> mutate(COUNTYFP10 = stringr::str_sub(GeographyName, 3, 5), # matching columns
                        STATEFP10 = stringr::str_sub(GeographyName, 1, 2)) |>
-                       group_by(STATEFP10, COUNTYFP10) |>
-                summarize(TotalCost = sum(Cost, na.rm=TRUE), .groups="drop") |>
+                       group_by(STATEFP10, COUNTYFP10) |> #need to group by both
+                summarize(TotalCost = sum(Cost, na.rm=TRUE), .groups="drop") |> #total cost per county
                 distinct() #keep only the unique state and counties
 
 #unique counties
 unique_counties <- counties |>
-  select(STATEFP10, COUNTYFP10, geometry) |>
-  distinct() 
+  select(STATEFP10, COUNTYFP10, geometry) |> 
+  distinct() #keeping only the unique counties (not all entries)
 
 #combine counties and BMPS by STATE and COUNTY FP10
 Counties_BMPS <- unique_counties |> left_join(unique_bmps, by = c("COUNTYFP10","STATEFP10")) 
