@@ -357,7 +357,7 @@ counties_streams <- st_join(counties, streams, join = st_intersects, left=FALSE,
 # all counties and rivers
 tm_shape(counties) + tm_polygons(fill="grey") + tm_shape(streams) + tm_lines(col = "blue")
 
-#quick map to check
+#quick map to check that only selected counties are shown
 tm_shape(counties) + tm_polygons(fill="grey") + tm_shape(counties_streams) + tm_lines(col = "blue")
 
 #top 3 counties with greatest total length of streams
