@@ -32,7 +32,7 @@ NOTE, you can use your API key using the following command ```census_api_key("YO
 
 ## Introduction
 
-In this lab, we will be calculating the spatial autocorrelation of various Census variables across a subset of the US. Will be using the ```tidycensus``` pacakge to download data, and we will also be using a new package called ```spdep``` in this assignment.
+In this lab, we will be calculating the spatial autocorrelation of various Census variables across a subset of the US. Will be using the ```tidycensus``` package to download data, and we will also be using a new package called ```spdep``` in this assignment.
 
 
 We begin by loading the relevant packages and data
@@ -136,7 +136,7 @@ ohio.projected <- ohio %>% sf::st_transform(., "ESRI:102010")
 tmap::tm_shape(ohio.projected) + tm_polygons()
 
 # make the neighborhood
-nb <- spdep::poly2nb(ohio.projected, queen = TRUE)
+nb <- spdep::poly2nb(ohio.projected, queen = TRUE) #Construct neighbours list from polygon list (poly2nb)
 
 nb
 
@@ -168,6 +168,8 @@ The ```zero.policy=TRUE``` option allows for lists of non-neighbors. This should
 
 To see the weight of the first polygon’s four neighbors type:
 
+Number of neighbors will 
+
 ```{r checkit, echo = TRUE, message = TRUE}
 lw$weights[1]
 ```
@@ -178,17 +180,20 @@ We can also plot the distribution of neighbors across the dataset.
 
 ```{r plotneighbors, echo = TRUE, message = TRUE}
 # use attr to get the count of neighbors in W
-neighbors <- attr(lw$weights,"comp")$d 
+neighbors <- attr(lw$weights,"comp")$d #distribution is the number of neighbors that they have
 
 # plot it
-hist(neighbors)
+hist(neighbors) #most counties have about 6 neighbors
 
 ```
 
 
-Finally, we’ll compute the average neighbor population of Females 75-79 years of age for each polygon. These values are often referred to as spatially lagged values. The following table shows the average neighboring F 75-79 values (stored in the F75.lag object) for each county. Note, I determined the correct attribute (variable 47 from table B01001) by reading the metadata from the following link: https://www.census.gov/programs-surveys/acs/technical-documentation/table-shells.2020.html#list-tab-79594641 .
+Finally, we’ll compute the average neighbor population of Females 75-79 years of age for each polygon. These values are often referred to as spatially lagged values. The following table shows the average neighboring F 75-79 values (stored in the F75.lag object) for each county. Note, I determined the correct attribute (variable 47 from table B01001) by reading the metadata from the following link: 
 
+https://www.census.gov/programs-surveys/acs/technical-documentation/table-shells.2020.html#list-tab-79594641 .
 
+**Spatially lagged values are:
+weighted averages or sums of a variable’s values in neighboring locations, used in spatial analysis to quantify how an observation at one location is influenced by its surrounding environment
 ```{r laggedVar, echo = TRUE, message = TRUE}
 F75.lag <- lag.listw(lw, ohio.projected$B01001_047E)
 F75.lag
@@ -205,6 +210,7 @@ moran.test(ohio.projected$B01001_047E, lw)
 
 Note that the p-value computed from the `moran.test` function is not computed from an MC simulation but **analytically** instead. This may not always prove to be the most accurate measure of significance. To test for significance using the MC simulation method instead, use the moran.mc function.
 
+---> This means testing with a Monte Carlo simulation or a technique that estimates potential outcomes of uncertain events by running thousands of simulations using random sampling
 
 ### Moran's plots
 
@@ -222,22 +228,75 @@ moran.plot(ohio.projected$B01001_047E, lw, zero.policy=TRUE, plot=TRUE)
 ## Your tasks
 
 1. Create a spatial subset of the US, with at AT MINIMUM 4 states, MAXIMUM 7 states. States must be contiguous. 
+```{r}
+#creating a subset of the eastern/midwest states around Colorado (CO, UT, NM, KS, WY) and looking at household income
+df.vars %>% dplyr::filter(concept == "MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS") %>% 
+  dplyr::filter(str_detect(label, "Female")) %>% 
+  dplyr::filter(str_detect(label, "22 to 24"))
+
+#picking the year and getting it into the county level from 2023
+female.age <- get_acs(geography = "county", 
+                      table = "B01001",
+                      output = "wide", 
+                      geometry = T, 
+                      year = 2023) #variable I want is 034, but I'll get the whole table
+
+glimpse(female.age)
+
+# limiting this down to just those eastern midwest states
+colorado_states <- female.age %>% 
+  mutate(., STATEID = stringr::str_sub(GEOID, 1, 2)) %>% 
+  dplyr::filter(STATEID %in% c("08","49", "35", "20", "56")) #changed to %in%
+
+
+# map it to verify we got all the states!
+tmap::tm_shape(colorado_states) + tm_polygons()
+
+```
 
 2. Choose a variable. If it's a raw count, you should normalize the variable in an appropriate manner (e.g., by total population, percent, by area)
+```{r}
+
+```
 
 3. Make a histogram of your chosen variable
+```{r}
+
+```
 
 4. Make a choropleth map of your chosen variable. Choose an appropriate data classiﬁcation scheme
+```{r}
+
+```
 
 5. Develop a contiguity-based spatial weights matrix of your choosing (i.e., rook or queen)
+```{r}
+# checking out the crs of the area
+sf::st_crs(colorado_states) 
 
-    5.1. Row-standardize the W
+# then reproject to north american equidistant conic
+colorado_states.projected <- colorado_states %>% sf::st_transform(., "ESRI:102010")
+
+# plot it again to make sure nothing broke
+tmap::tm_shape(colorado_states.projected) + tm_polygons()
+
+# make the neighborhood!!
+nb_colorado <- spdep::poly2nb(colorado_states.projected, queen = TRUE) #Construct neighbors list from polygon list (poly2nb). Chose queen to make it more permeable
+
+#take a look
+nb_colorado
+
+
+#5.1. Row-standardize the W
+#5.2. Plot a histogram of the number of neighbors
+#5.3. Calculate the average number of neighbors
+#5.4. Make a Moran Plot
+
+```
+
     
-    5.2. Plot a histogram of the number of neighbors
-  
-    5.3. Calculate the average number of neighbors
-  
-    5.4. Make a Moran Plot
+    
+    
 
 6. Repeat #5 (and 5.1 - 5.4) above with a W developed using the IDW method. You will need to investigate the `spdep` documentation to find the correct method/function.
 
@@ -245,12 +304,17 @@ moran.plot(ohio.projected$B01001_047E, lw, zero.policy=TRUE, plot=TRUE)
 ## Questions:
 
 1. Describe in your own words how Moran’s I is calculated
+Basically, Moran's I is a global measure of spatial autocorrelation and it assesses how similar or dissimilar an observation is at specific locations compared to a defined group of "neighbors" and this is weighted by the closeness of neighbors. To calculate this, you can break it up into the numerator and the denominator of the equation that I is equals to. In the numerator you are essentially measuring if locations that have similar values are closer together or farther apart spatially and then you take the sum of those differences, if it is closer locations then the sum will be positive and high and if they are farther locations then it is negative. Then in the denominator it measures the variance of those observations from the mean.
+
 
 2. Describe in your own words: what is a spatially-lagged variable?
+A spatially lagged variable is the weighted sum of a specific value for a variable within a defined neighborhood instead just looking at the one specific variable measure. It is spatially lagged because the values of an observation are influenced by the surrounding values of y within the neighborhood and how they change as they move away from that neighborhood.
 
 3. How does your analysis in this lab (as simple as it is) differ by how you have formalized W (e.g., space, neighbors) in two diﬀerent methods? How might it affect analysis?
-
-4. What does it mean if an observation falls in the “H-L” quadrant? Why might it be useful to detect such occurances?
+-----------------------
+-----------------------
+4. What does it mean if an observation falls in the “H-L” quadrant? Why might it be useful to detect such occurrences?
+If it falls into the H-L quadrant then it means that these are high values (above the recorded average) that are surrounded by areas below the average. This is important for things that may include "hotspots" like areas that are experiencing hotspots in disease or areas that are using high amounts of resources like fossil fuels compared to areas nearby that aren't using any (could be because of unequal access). Essentially these areas could be noted for spatial local phenomena occurring.
 
 
 ## Bonus (+30 points)
