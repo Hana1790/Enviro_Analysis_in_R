@@ -167,7 +167,7 @@ lw <- spdep::nb2listw(nb, style="W", zero.policy=TRUE)
 The ```zero.policy=TRUE``` option allows for lists of non-neighbors. This should be used with caution since the user may not be aware of missing neighbors in their dataset. However, a zero.policy of `FALSE` would return an error if you have a dataset where a polygon does not have a neighbor.
 
 To see the weight of the first polygon’s four neighbors type:
-
+##
 Number of neighbors will 
 
 ```{r checkit, echo = TRUE, message = TRUE}
@@ -229,76 +229,130 @@ moran.plot(ohio.projected$B01001_047E, lw, zero.policy=TRUE, plot=TRUE)
 
 1. Create a spatial subset of the US, with at AT MINIMUM 4 states, MAXIMUM 7 states. States must be contiguous. 
 ```{r}
-#creating a subset of the eastern/midwest states around Colorado (CO, UT, NM, KS, WY) and looking at household income
-df.vars %>% dplyr::filter(concept == "MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS") %>% 
+#creating a subset of the eastern/midwest states around Colorado (CO, UT, NM, KS, WY) and looking at female population 22-24 years old
+df.vars %>% dplyr::filter(concept == "SEX BY AGE") %>% 
   dplyr::filter(str_detect(label, "Female")) %>% 
-  dplyr::filter(str_detect(label, "22 to 24"))
-
-#picking the year and getting it into the county level from 2023
-female.age <- get_acs(geography = "county", 
-                      table = "B01001",
-                      output = "wide", 
-                      geometry = T, 
-                      year = 2023) #variable I want is 034, but I'll get the whole table
-
-glimpse(female.age)
+  dplyr::filter(str_detect(label, "22 to 24")) #we already have B01001 table, but we are looking to use the variable 034
 
 # limiting this down to just those eastern midwest states
-colorado_states <- female.age %>% 
+f.pop.states <- d.sex.by.age %>% 
   mutate(., STATEID = stringr::str_sub(GEOID, 1, 2)) %>% 
   dplyr::filter(STATEID %in% c("08","49", "35", "20", "56")) #changed to %in%
 
-
 # map it to verify we got all the states!
-tmap::tm_shape(colorado_states) + tm_polygons()
+tmap::tm_shape(f.pop.states) + tm_polygons()
 
 ```
 
 2. Choose a variable. If it's a raw count, you should normalize the variable in an appropriate manner (e.g., by total population, percent, by area)
 ```{r}
+#choosing to look at female ages 22-24 population per county in those 5 states
+#I am going to average their population per state
+f.pop.states <- f.pop.states |>
+  group_by(STATEID) |>
+  mutate(avg_state_pop = mean(B01001_034E, na.rm=TRUE)) #specific variable I wanted
 
 ```
 
 3. Make a histogram of your chosen variable
 ```{r}
+#plot out the data into a histogram and look at state average population per county
+f.pop.states |> group_by(STATEID) |> 
+    ggplot(aes(x = STATEID, y = avg_state_pop)) +
+        geom_col(fill="steelblue") + 
+    labs(x="State FIPS Id",
+         y="Average County Population Per State",
+         title="Average County Female Population Ages 22-24 in CO,UT, NM, KS, WY") +
+        theme_minimal()
 
 ```
 
 4. Make a choropleth map of your chosen variable. Choose an appropriate data classiﬁcation scheme
 ```{r}
+#found some cool color schemes from the R graph gallery
+f.pop.states.choropleth <- 
+  ggplot(f.pop.states) +
+  geom_sf(aes(fill = B01001_034E), linewidth = 0, alpha = 0.9) +
+  theme_void() +
+  scale_fill_viridis_c( #continuous scale for pop
+    option="plasma", #pretty colors
+    breaks = c(1, 500, 1000, 5000, 10000, 15000, 20000, 25000, 30000),
+    name = "Female (Ages 22-24) Population",
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(12, units = "mm"),
+      label.position = "bottom",
+      title.position = "top",
+      nrow = 1)) +
+  labs(title = "Female Population Ages 22-24 Per County in 2020") +
+  theme(
+    text = element_text(color = "#22211d"),
+    plot.background = element_rect(fill = "#f5f5f2", color = NA),
+    panel.background = element_rect(fill = "#f5f5f2", color = NA),
+    legend.background = element_rect(fill = "#f5f5f2", color = NA),
+    legend.position = "bottom")
 
+f.pop.states.choropleth
+  
 ```
 
 5. Develop a contiguity-based spatial weights matrix of your choosing (i.e., rook or queen)
 ```{r}
 # checking out the crs of the area
-sf::st_crs(colorado_states) 
+sf::st_crs(f.pop.states) 
 
 # then reproject to north american equidistant conic
-colorado_states.projected <- colorado_states %>% sf::st_transform(., "ESRI:102010")
+f.pop.states.projected <- f.pop.states %>% sf::st_transform(., "ESRI:102010")
 
 # plot it again to make sure nothing broke
-tmap::tm_shape(colorado_states.projected) + tm_polygons()
+tmap::tm_shape(f.pop.states.projected) + tm_polygons()
 
 # make the neighborhood!!
-nb_colorado <- spdep::poly2nb(colorado_states.projected, queen = TRUE) #Construct neighbors list from polygon list (poly2nb). Chose queen to make it more permeable
+nb_colorado <- spdep::poly2nb(f.pop.states.projected, queen = TRUE) #Construct neighbors list from polygon list (poly2nb). Chose queen to make it more permeable
 
 #take a look
 nb_colorado
 
+#checking out the neighbors
+f.pop.states.projected$NAME[1] # county in index 1
+nb_colorado[[1]] %>% f.pop.states.projected$NAME[.]
+
+
+```
+
+#next steps!
+```{r}
 
 #5.1. Row-standardize the W
+lw.pt2 <- spdep::nb2listw(nb_colorado, style="W", zero.policy=TRUE) #calling it pt.2 
+lw.pt2$weights[1] #county in NM has 3 neighbors that are weighted the same
+
 #5.2. Plot a histogram of the number of neighbors
+CO.neighbors <- attr(lw.pt2$weights,"comp")$d #distribution is the number of neighbors that they have
+#making a plot to check
+hist(CO.neighbors) #most counties have about 6 neighbors
+
+
 #5.3. Calculate the average number of neighbors
+F22.lag <- lag.listw(lw.pt2, f.pop.states.projected$B01001_034E) #females ages 22-24
+F22.lag
+
 #5.4. Make a Moran Plot
+moran.test(f.pop.states.projected$B01001_034E,lw.pt2) #p-val is still significant
+
+#check out moran plot
+moran.plot(f.pop.states.projected$B01001_034E, lw.pt2, zero.policy=TRUE, plot=TRUE)
+#lots of values are LL (not a lot of areas have high young female populations)
+
 
 ```
 
     
-    
-    
-
 6. Repeat #5 (and 5.1 - 5.4) above with a W developed using the IDW method. You will need to investigate the `spdep` documentation to find the correct method/function.
+-----IDW means inverse distance weighting and needs the nb2listwdist function
+```{r}
+
+```
 
 
 ## Questions:
