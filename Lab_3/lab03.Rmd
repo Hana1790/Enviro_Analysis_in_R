@@ -229,7 +229,7 @@ moran.plot(ohio.projected$B01001_047E, lw, zero.policy=TRUE, plot=TRUE)
 
 1. Create a spatial subset of the US, with at AT MINIMUM 4 states, MAXIMUM 7 states. States must be contiguous. 
 ```{r}
-#creating a subset of the eastern/midwest states around Colorado (CO, UT, NM, KS, WY) and looking at female population 22-24 years old
+#creating a subset of the eastern/midwest states around Colorado (CO, UT, NM, KS, WY) and looking at female population 22-24 years old since that's my age bracket
 df.vars %>% dplyr::filter(concept == "SEX BY AGE") %>% 
   dplyr::filter(str_detect(label, "Female")) %>% 
   dplyr::filter(str_detect(label, "22 to 24")) #we already have B01001 table, but we are looking to use the variable 034
@@ -253,6 +253,7 @@ f.pop.states <- f.pop.states |>
   mutate(avg_state_pop = mean(B01001_034E, na.rm=TRUE)) #specific variable I wanted
 
 ```
+I decided to do the average county population by state since the county population may be larger for states with more counties
 
 3. Make a histogram of your chosen variable
 ```{r}
@@ -326,6 +327,7 @@ nb_colorado[[1]] %>% f.pop.states.projected$NAME[.]
 
 #5.1. Row-standardize the W
 lw.pt2 <- spdep::nb2listw(nb_colorado, style="W", zero.policy=TRUE) #calling it pt.2 
+lw.pt2
 lw.pt2$weights[1] #county in NM has 3 neighbors that are weighted the same
 
 #5.2. Plot a histogram of the number of neighbors
@@ -351,9 +353,47 @@ moran.plot(f.pop.states.projected$B01001_034E, lw.pt2, zero.policy=TRUE, plot=TR
     
 6. Repeat #5 (and 5.1 - 5.4) above with a W developed using the IDW method. You will need to investigate the `spdep` documentation to find the correct method/function.
 -----IDW means inverse distance weighting and needs the nb2listwdist function
+-----"spdep" means spatial dependence
 ```{r}
+#check the spatial reprojection again
+tmap::tm_shape(f.pop.states.projected) + tm_polygons()
+
+#transform into centroid (measures distance from those points)
+pts <- st_centroid(f.pop.states.projected)
+
+#create the distance based nearest neighbor
+nb_counties <- dnearneigh(pts, 0, 500000) #500 km
+
+#Step 6.1- create W, this is row standardized
+counties.weights.idw <- nb2listwdist(nb_counties, pts, type = "idw", style="W", zero.policy = TRUE)
+counties.weights.idw
+
+
+#Step 6.2- histogram of neighbors, the histogram won't come out correctly unless I Used this additional function to make a list
+counties.neighbors.list <- nb2listw(nb_counties, style="W", zero.policy = TRUE) 
+counties.neighbors <- attr(counties.neighbors.list$weights,"comp")$d 
+counties.neighbors #this is the binary list, not the continuous list from nb2listwdist function
+
+#actually plot neighbors
+hist(counties.neighbors) #most counties had 120-140 neighbors
+
+
+#Step 6.3- Looking at the spatially lagged variable
+F22.lag.idw <- lag.listw(counties.weights.idw, f.pop.states.projected$B01001_034E) #females ages 22-24
+F22.lag.idw
+
+
+#Step 6.4- moran test --> back to using the continuous matrix
+moran.test(f.pop.states.projected$B01001_034E, counties.weights.idw, zero.policy = TRUE, na.action = na.pass)
+
+#look at moran plot for IDW
+moran.plot(f.pop.states.projected$B01001_034E, counties.weights.idw, zero.policy=TRUE, plot=TRUE)
+
+#old moran plot from queen method to compare the differences
+moran.plot(f.pop.states.projected$B01001_034E, lw.pt2, zero.policy=TRUE, plot=TRUE)
 
 ```
+Found most of this information from: https://search.r-project.org/CRAN/refmans/spdep/html/nb2listwdist.html
 
 
 ## Questions:
@@ -361,19 +401,51 @@ moran.plot(f.pop.states.projected$B01001_034E, lw.pt2, zero.policy=TRUE, plot=TR
 1. Describe in your own words how Moran’s I is calculated
 Basically, Moran's I is a global measure of spatial autocorrelation and it assesses how similar or dissimilar an observation is at specific locations compared to a defined group of "neighbors" and this is weighted by the closeness of neighbors. To calculate this, you can break it up into the numerator and the denominator of the equation that I is equals to. In the numerator you are essentially measuring if locations that have similar values are closer together or farther apart spatially and then you take the sum of those differences, if it is closer locations then the sum will be positive and high and if they are farther locations then it is negative. Then in the denominator it measures the variance of those observations from the mean.
 
+--> TLDR: You essentially measure a value like income or population at one location and how much it differs from the average and then you multiply that by the differences of the established neighbors around that observation.
+
 
 2. Describe in your own words: what is a spatially-lagged variable?
-A spatially lagged variable is the weighted sum of a specific value for a variable within a defined neighborhood instead just looking at the one specific variable measure. It is spatially lagged because the values of an observation are influenced by the surrounding values of y within the neighborhood and how they change as they move away from that neighborhood.
+A spatially lagged variable is the weighted sum of a specific value for a variable within a defined neighborhood instead just looking at the one specific variable measure. It is spatially lagged because the values of an observation are influenced by the surrounding values of y within the neighborhood and how they change as they move away from that neighborhood. Some methods (IDW) treat all neighbors the same and have a larger influence on that variable.
 
 3. How does your analysis in this lab (as simple as it is) differ by how you have formalized W (e.g., space, neighbors) in two diﬀerent methods? How might it affect analysis?
------------------------
------------------------
+This analysis changes the results of the formalized W by changing what it means to have a neighbor. In the first scenario, we use the method where counties that are touching each other could form a neighborhood and it was a simpler binary value, but when we switch to IDW, we are seeing different forms of neighborhoods. Now a county in NM could be neighbors with a county in Colorado or Kansas depending purely on distance. It is a different way to interpret the spatial lag and in this example, the number of neighbors that each county had went way up after switching to IDW, especially because my max distance was 500km.
+
+This changed the analysis because the contiguity based W had a lot of LL values, but now it is showing up with a lot of LL and LH values which are less common and are considered outliers because the IDW method is more sensitive to outliers. Along with that, the IDW gives continuous values compared to the binary system used by contiguity methods.These methods will change how you view the information and how you interpret the neighborhood affecting the observations.
+
+
 4. What does it mean if an observation falls in the “H-L” quadrant? Why might it be useful to detect such occurrences?
-If it falls into the H-L quadrant then it means that these are high values (above the recorded average) that are surrounded by areas below the average. This is important for things that may include "hotspots" like areas that are experiencing hotspots in disease or areas that are using high amounts of resources like fossil fuels compared to areas nearby that aren't using any (could be because of unequal access). Essentially these areas could be noted for spatial local phenomena occurring.
+If it falls into the H-L quadrant then it means that these are high values (above the recorded average) that are surrounded by areas below the average and are considered outliers. This is important for things that may include "hotspots" like areas that are experiencing hotspots in disease or areas that are using high amounts of resources like fossil fuels compared to areas nearby that aren't using any (could be because of unequal access). Essentially these areas could be noted for spatial local phenomena occurring.
 
 
 ## Bonus (+30 points)
 
 B1. make another Moran plot, this time do so manually (use `geom_point` from `ggplot`). You must label each quadrant with HH, HL, LL, and LH, respectively. You should also use color and/or shape to denote whether an observation is statistically significant. Tip, you can find the data you want using the ```moran.plot``` function, but you'll have to alter the function call and read some documentation.
+```{r}
+#need to create a lagged y variable, not a matrix
+f.pop.states.projected <- f.pop.states.projected |>
+  ungroup() |> #grouped earlier and it breaks this chain
+  mutate(B01001_034E_lag_idw = lag.listw(counties.weights.idw,
+                                        f.pop.states.projected$B01001_034E,
+                                        zero.policy = TRUE))
+#moran plot in ggplot
+ggplot(f.pop.states.projected, 
+       aes(x=B01001_034E, y=B01001_034E_lag_idw))+ #replace with the lagged numbers
+  geom_point(alpha=0.45) + 
+  geom_smooth(method = "lm", se = TRUE, color = "#836FFF",
+              size=1.5) + #not a 1:1 line like the book had
+  geom_hline(yintercept = mean(f.pop.states.projected$B01001_034E_lag_idw), 
+             linetype = 2) +
+  geom_vline(xintercept = mean(f.pop.states.projected$B01001_034E), 
+             linetype = 2) + #add on quadrant labels and colors that match the map from lecture
+  annotate("text", x = 20000, y = 4000, label = "High-High (HH)", color = "#FF6A6A") +
+  annotate("text", x = 1, y = 4000, label = "Low-High\n(LH)", color = "blue") +
+  annotate("text", x = 0, y = 0, label = "Low-Low\n(LL)", color = "skyblue1") +
+  annotate("text", x = 20000, y = 0, label = "High-Low (HL)", color = "red") +
+  labs(x = "Female Population Ages 22-24",
+       y = "Spatial Lag of Female Population (IDW)") +
+  theme_bw()
+
+#couldn't quite figure out how to get them colored based on significance
+```
 
 B2. plot a choropleth map of your dataset with a categorical color scheme, where the shading corresponds to the Moran plot (really, “LISA”) quadrants. Thus, your map will have four shades of color.
