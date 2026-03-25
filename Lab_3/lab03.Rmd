@@ -284,7 +284,8 @@ f.pop.states.choropleth <-
       label.position = "bottom",
       title.position = "top",
       nrow = 1)) +
-  labs(title = "Female Population Ages 22-24 Per County in 2020") +
+  labs(title = "Female Population Ages 22-24 Per County in 2020",
+       subtitle = "Across Colorado, Utah, New Mexico, Kansas, and Wyoming") +
   theme(
     text = element_text(color = "#22211d"),
     plot.background = element_rect(fill = "#f5f5f2", color = NA),
