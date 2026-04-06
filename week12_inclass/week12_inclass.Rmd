@@ -43,6 +43,7 @@ terra::nrow(myras) #number of rows
 
 terra::ncell(myras) #number of cells (rows x columns)
 
+res(myras) #cell resolution
 
 # to demonstrate rows * columns = cells
 ncol(myras) * nrow(myras) == ncell(myras)
@@ -173,7 +174,7 @@ Again, how do they differ?
 
 Let's turn some cells into points
 ```{r}
-myras %>% terra::as.points()
+ myras %>% terra::as.points()
 ```
 What's the data structure returned?
 
@@ -398,6 +399,14 @@ myras.ci %>% terra::values() %>% mean(na.rm = T)
 # Your task with the remaining time
 
 Tell me how large the cyanobacteria bloom is in `myras`. I have shown you everything you need to know
+```{r}
+#count of pixels in valid data
+terra::freq(validdata) #815 with value 1
+
+#multiply cells
+bloom_area <- 815 * 90000
+bloom_area
+```
 
 1. Think through the problem CONCEPTUALLY
 2. THEN once you have the process figured out, write the code
