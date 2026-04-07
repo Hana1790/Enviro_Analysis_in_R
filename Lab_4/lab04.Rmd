@@ -118,20 +118,21 @@ Write a function called `clean_cicyano(r)` that:
 
 1. Takes a SpatRaster `r` as input
 2. Builds a reclassification matrix that maps **0** and **all values >= 250** to `NA`, and leaves values 1–249 unchanged
-3. Applies the reclassification using `terra::classify()` with the argument `others = NA` (this is a useful argument — look it up)
+3. Applies the reclassification using `terra::classify()`
 4. Returns the cleaned raster
 
-*Hint: Your reclassification matrix should handle the no-detection case (0) and all sentinel codes (250 through 255). Review how `terra::classify()` uses a three-column matrix to specify `[from, to, becomes]` intervals.*
+*Hint: Your reclassification matrix should handle the no-detection case (0) and all sentinel codes (250 through 255). Review how `terra::classify()` uses a three-column matrix to specify `[from, to, becomes]` intervals. You may find `right = NA` useful here so boundary values like 0 and 250 are included in the intervals.*
+
 
 ```{r clean_function, echo=TRUE, message=TRUE}
 clean_cicyano <- function(r) {
   
   #make reclassification matrix - only keeping values I want
   rcl_matrix <- matrix(c(0,0,NA,
-                         249,256,NA),ncol = 3, byrow = TRUE)
+                         250,255,NA),ncol = 3, byrow = TRUE)
   
   #cleaned  up raster, setting invalid data to NA
-  cleaned_raster <- terra::classify(r, rcl = rcl_matrix, others=NULL)
+  cleaned_raster <- terra::classify(r, rcl = rcl_matrix, right=NA)
   
   return(cleaned_raster)
 }
@@ -185,9 +186,8 @@ Test your function. What is the range of CI values in the transformed raster? Do
 **Q1.2** Why is it important to remove sentinel values *before* applying the DN-to-CI transform — rather than after? What would happen to a land pixel (value = 252) if you transformed it without cleaning first?
 -It is important because those values could be incorrectly counted as bloom area, meaning that land cover is now part of the bloom radius. That pixel would be transformed into a very high level bloom around 0.067.
 
-**Q1.3** The `others = NA` argument in `terra::classify()` is useful here. In your own words, what does it do?
--The others function here decides that something not identified in the reclassification matrix will be assigned a NA value. NOOTTTT FINISHED!!!!!!!!!!!!
-
+**Q1.3** Why is the `right = NA` argument useful in `terra::classify()` for this task?
+- This function essentially closes the intervals on both sides in a from-to-becomes classification like in the question.This allows 1 and 249 to be included in the values that are unchanged without having to write out 0-1, 1-249,249-255, etc.
 ---
 
 ## Task 2: Spatial subsetting — crop and mask
@@ -219,6 +219,8 @@ aug_16_rast <- terra::rast("erie_raster_ex/images/ts_2017.0816_0822.L4.LE3.CIcya
 
 #apply first function
 clean_aug_rast <- clean_cicyano(aug_16_rast)
+#check
+terra::freq(clean_aug_rast) #it has the correct interval
 
 #transform the raster
 aug_rast_ci <- dn_to_ci(clean_aug_rast)
@@ -227,8 +229,12 @@ aug_rast_ci <- dn_to_ci(clean_aug_rast)
 crop_rast <- terra::crop(aug_rast_ci, erie_sand) 
   
 #mask the raster
-mask_rast <- terra::mask(crop_rast, erie_sand) 
-plot(mask_rast)
+sandusky_0816 <- terra::mask(crop_rast, erie_sand) 
+plot(sandusky_0816)
+
+#check if its cropped to the actual shapefile or a bb
+plot(erie_sand)
+
 ```
 
 ### 2.3 Compare full vs. masked
@@ -239,8 +245,17 @@ Using `terra::global()`, calculate and compare the **mean** CI value for:
 - The Sandusky Bay-masked raster (`sandusky_0816`)
 
 ```{r compare_stats, echo=TRUE, message=TRUE}
-# your code here
+#lake erie full raster mean CI value
+aug_rast_ci %>% terra::global(., "mean", na.rm=TRUE)
+
+#sandusky bay cleaned raster
+mask_rast %>% terra::global(., "mean", na.rm=TRUE)
+
 ```
+The mean value for all of Lake Erie on Aug 16 is about 0.0006 CI where the mean for the Sandusky Bay on Aug 16 is 
+0.0002 CI.
+
+
 
 ### 2.4 Map it
 
@@ -251,14 +266,27 @@ Create a `tmap` map of `sandusky_0816`. Your map should include:
 - A scale bar
 
 ```{r map_sandusky, echo=TRUE, message=TRUE}
-# your code here
+
+tm_shape(sandusky_0816) +
+  tm_raster( col.scale = tm_scale_continuous(values = c("#e5f5e0", "#31a354", "#006d2c")),
+             col.legend = tm_legend(title="Chlorophyll Cyanobacteria Index",
+                                    position = tm_pos_out("right", "center"),
+                                    orientation = "portrait")) +
+  tm_title("Chlorophyll Cyanobacteria Bloom in Sandusky Ohio - August 16, 2017",
+           position = tm_pos_out("center", "top"),
+           size=3) +
+  tm_scalebar(position = c("left", "bottom"))
+
 ```
 
 ### Questions for Task 2:
 
 **Q2.1** In your own words, what is the difference between `terra::crop()` and `terra::mask()`? Why did we use both here instead of just one?
+-The crop function simply crops a raster to an area of interest, but it does so in a rectangular form. This means that the area is not perfectly bounded to the same shapefile or area of interest, but to a rectangular area around that area of interest. 
+-The mask function takes the raster and crops it to the exact boundary of the shapefile or area of interest, not just to a rectangular area surrounding it. We used both to see how a bounding area near sandusky bay would look compared to the exact shapefile outline of the bay (more precise)
 
 **Q2.2** The mean CI value for Sandusky Bay is likely different from the full lake mean. What could explain this? Does this necessarily mean Sandusky Bay has more or less cyanobacteria than average?
+- The mean value for Sandusky Bay doesn't necessarily mean there is less than average compared to all of Lake Erie, it may just be because Lake Erie had many more pixel values to take into account with the mean than Sandusky does because it is a smaller area. *************************************************************************************************************************** finish this
 
 ---
 
@@ -271,7 +299,11 @@ Load and clean **at least four** of the seven rasters (choose dates that span a 
 *Tip: using `purrr::map()` over your `raster_files` vector, combined with your preprocessing functions, can make this more efficient.*
 
 ```{r stack_rasters, echo=TRUE, message=TRUE}
-# your code here
+aug_02_rast <- terra::rast("erie_raster_ex/images/ts_2017.0802_0808.L4.LE3.CIcyano.MAXIMUM_7day.tif")
+aug_23_rast <- terra::rast("erie_raster_ex/images/ts_2017.0823_0829.L4.LE3.CIcyano.MAXIMUM_7day.tif")
+sept_20_rast <- terra::rast("erie_raster_ex/images/ts_2017.0920_0926.L4.LE3.CIcyano.MAXIMUM_7day.tif")
+oct_18_rast <- terra::rast("erie_raster_ex/images/ts_2017.1018_1024.L4.LE3.CIcyano.MAXIMUM_7day.tif")
+
 ```
 
 ### 3.2 Temporal summary
