@@ -249,7 +249,7 @@ Using `terra::global()`, calculate and compare the **mean** CI value for:
 aug_rast_ci %>% terra::global(., "mean", na.rm=TRUE)
 
 #sandusky bay cleaned raster
-mask_rast %>% terra::global(., "mean", na.rm=TRUE)
+sandusky_0816 %>% terra::global(., "mean", na.rm=TRUE)
 
 ```
 The mean value for all of Lake Erie on Aug 16 is about 0.0006 CI where the mean for the Sandusky Bay on Aug 16 is 
@@ -304,6 +304,21 @@ aug_23_rast <- terra::rast("erie_raster_ex/images/ts_2017.0823_0829.L4.LE3.CIcya
 sept_20_rast <- terra::rast("erie_raster_ex/images/ts_2017.0920_0926.L4.LE3.CIcyano.MAXIMUM_7day.tif")
 oct_18_rast <- terra::rast("erie_raster_ex/images/ts_2017.1018_1024.L4.LE3.CIcyano.MAXIMUM_7day.tif")
 
+#create list of rasters
+raster_files <- list(aug_02_rast, aug_23_rast, sept_20_rast, oct_18_rast)
+
+library(purrr)
+cleaned_raster_files <- raster_files %>% 
+  purrr::map(~ clean_cicyano(.x)) %>% #applies first function to each in the list
+  purrr::map(~ dn_to_ci(.x)) #applies second function to each in the list
+
+#quick check to see each of these steps worked
+summary(raster_files[[4]])
+summary(cleaned_raster_files[[4]])
+
+#create single multi-layer raster
+multi_rast <- rast(cleaned_raster_files) 
+  
 ```
 
 ### 3.2 Temporal summary
@@ -313,15 +328,40 @@ Use `terra::global()` on your multi-layer raster to calculate the **mean** CI va
 Organize the results into a data frame with at minimum two columns: `date` and `mean_ci`. You will need to extract the date from each filename. Use `basename()` and/or `stringr::str_extract()` to parse the date string from the file path — the date range is the part of the filename that looks like `0802_0808`.
 
 ```{r temporal_summary, echo=TRUE, message=TRUE}
-# your code here
+library(stringr)
+
+#calculate mean CI value per layer
+CI_value <- terra::global(multi_rast, "mean", na.rm=TRUE)
+
+#create a list of their filenames
+file_names <- names(multi_rast) 
+
+#create this dataframe
+CI_df <- data.frame(
+  file_name = file_names,
+  mean_ci = CI_value$mean)
+
+#clean up date names
+CI_df <- CI_df %>%
+  mutate(start_month = stringr::str_sub(file_name, 9, 10), #extracting month
+         start_day = stringr::str_sub(file_name, 11, 12), #extracting day
+         end_month = stringr::str_sub(file_name, 14, 15), #find the end month
+         end_day = stringr::str_sub(file_name, 16, 17), # find end day
+         date= stringr::str_extract(file_name, "\\d+\\.?\\d*")) #plain date
 ```
 
 ### 3.3 Plot the time series
 
 Using `ggplot2`, create a line or point plot showing mean CI values over time. Label your axes clearly. Which date in your dataset shows the highest mean bloom intensity?
+---My image from September 20th has the highest mean bloom intensity
 
 ```{r time_series_plot, echo=TRUE, message=TRUE}
-# your code here
+ggplot(data=CI_df) +
+  geom_point(aes( x=date, y=mean_ci), color="blue3") +
+  labs(x="Date Image Collection Started",
+       y="Mean Chlorophyll Cyanobacteria Index per Image",
+       title="Average Chlorophyll Cyanobacteria Index per Day - From August to October 2017") +
+  theme_bw()
 ```
 
 ### 3.4 Binary bloom comparison
