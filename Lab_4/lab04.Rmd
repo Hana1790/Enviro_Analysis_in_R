@@ -318,7 +318,8 @@ summary(cleaned_raster_files[[4]])
 
 #create single multi-layer raster
 multi_rast <- rast(cleaned_raster_files) 
-  
+
+
 ```
 
 ### 3.2 Temporal summary
@@ -356,11 +357,14 @@ Using `ggplot2`, create a line or point plot showing mean CI values over time. L
 ---My image from September 20th has the highest mean bloom intensity
 
 ```{r time_series_plot, echo=TRUE, message=TRUE}
+library(scales) #show the actual CI values
+
 ggplot(data=CI_df) +
   geom_point(aes( x=date, y=mean_ci), color="blue3") +
   labs(x="Date Image Collection Started",
        y="Mean Chlorophyll Cyanobacteria Index per Image",
        title="Average Chlorophyll Cyanobacteria Index per Day - From August to October 2017") +
+  scale_y_continuous(labels = label_number(accuracy = 0.0001)) +
   theme_bw()
 ```
 
@@ -378,15 +382,41 @@ Map both results.
 *This requires careful logical thinking before writing code. Plan your approach in pseudocode first.*
 
 ```{r binary_comparison, echo=TRUE, message=TRUE}
-# your code here
+#selecting Aug 23 and Sept 20
+clean_aug_23 <- cleaned_raster_files[[2]]
+clean_sept_20 <- cleaned_raster_files[[3]]
+
+#formula check for the smallest value that should be in these rasters
+10**(((3.0 / 250.0) * 1) - 4.2) #since we limited the values from 1-249
+10**(((3.0 / 250.0) * 249) - 4.2) #checking highest value
+
+#new reclass matrix
+binary_raster <- function(x) {
+  
+  rcl_matrix_new <- matrix(c(6.486344e-05,0.0613762,1),ncol = 3, byrow = TRUE)  
+  #expected high and low values
+  
+  #cleaned  up raster, setting invalid data to NA
+  binary_raster <- terra::classify(x, rcl = rcl_matrix_new, others=NA)Bu
+  
+  return(binary_raster)
+}
+
+#running binary raster on both dates
+final_aug23 <-binary_raster(clean_aug_23)
+final_sept20 <- binary_raster(clean_sept_20)
+
+#plotting to see if this worked
+plot(final_aug23)
 ```
 
 ### Questions for Task 3:
 
 **Q3.1** What are the limitations of using **mean CI value** as a measure of bloom severity across the whole lake? What would be a more robust alternative metric?
+-Some of the limitations would be that it doesn't distinguish between a high bloom or low bloom severity, it could be a small, very intense bloom that is treated the same as a very large weak bloom. Another issue is that using the entire lake could dilute the mean bloom because blooms typically occur along the coastlines and in small shallow portions of the lake. A better metric could be doing % bloom extent and calculating what percent of the lake had a bloom above certain ranges (low, moderate, high) or look at a range of summary statistics and how it relates to the spatial area.
 
 **Q3.2** Stacking rasters with `c()` in terra creates a multi-layer SpatRaster. What requirement must all rasters meet in order to be stacked this way? (Think: extent, resolution, CRS.)
-
+-These rasters must have the same extent, resolution, be projected into the same CRS and cropped to the same areas. If they aren't the rasters could improperly stack and could extend in different areas and have incorrect analysis.
 ---
 
 ## Task 4: Zonal analysis with areas of interest
@@ -396,7 +426,20 @@ Map both results.
 Use `list.files()` to get all `.shp` files from the `bounds/` directory. Load each with `sf::read_sf()`, then combine them into a single sf object using `dplyr::bind_rows()`. Make sure each polygon has an identifier — if not, add a column with the filename or AOI name.
 
 ```{r load_all_aois, echo=TRUE, message=TRUE}
-# your code here
+#listing files
+list.files(path="./erie_raster_ex/bounds", pattern="\\.shp$")
+
+bb_e_islands <- sf::read_sf("erie_raster_ex/bounds/bb_erie_islands.shp")
+bb_e_large <- sf::read_sf("erie_raster_ex/bounds/bb_erie_large.shp")
+bb_e_maumee <- sf::read_sf("erie_raster_ex/bounds/bb_erie_maumee.shp")
+bb_e_sandusky <- sf::read_sf("erie_raster_ex/bounds/bb_erie_sandusky.shp")
+bb_e_sand_plus <- sf::read_sf("erie_raster_ex/bounds/bb_erie_sandusky_plus.shp")
+bb_e_west_sister <- sf::read_sf("erie_raster_ex/bounds/bb_erie_west_sister.shp")
+
+#combine them
+combined_sf <- dplyr::bind_rows(bb_e_islands, bb_e_large, bb_e_maumee, bb_e_sandusky,
+                                bb_e_sand_plus,bb_e_west_sister) %>%
+  mutate(AOI = c("e_islands", "e_large", "e_maumee", "e_sandusky", "e_sand_plus", "e_west_sister"))
 ```
 
 ### 4.2 Extract by area
