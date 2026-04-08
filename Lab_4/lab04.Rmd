@@ -67,7 +67,7 @@ Use `fs::dir_ls` with the parameter `regexp = "\\.tif$"` to get the file paths f
 ```{r list_files, echo=TRUE, message=TRUE}
 #Finding files with the .tif extension
 raster_files <- fs::dir_ls("erie_raster_ex/images/", regexp = "\\.tif$")
-print(raster_files) #tehre are 7 tif images
+print(raster_files) #there are 7 tif images
 ```
 
 ### 1.2 Inspect a single raster
@@ -181,7 +181,7 @@ Test your function. What is the range of CI values in the transformed raster? Do
 ### Questions for Task 1:
 
 **Q1.1** What does the CRS of these rasters tell you about how distances and areas are measured? Would you need to reproject before calculating bloom area in square kilometers?
--The crs of these rasters tells us that area and distance is preserved pretty well within zones, but some distortion could be experienced when measuring across zones. It is already in meters so you can calculate the bloom area without needing to reproject.
+-The UTM crs of these rasters tells us that area and distance is preserved pretty well within zones, but some distortion could be experienced when measuring across zones. It is already in meters so you can calculate the bloom area without needing to reproject.
 
 **Q1.2** Why is it important to remove sentinel values *before* applying the DN-to-CI transform — rather than after? What would happen to a land pixel (value = 252) if you transformed it without cleaning first?
 -It is important because those values could be incorrectly counted as bloom area, meaning that land cover is now part of the bloom radius. That pixel would be transformed into a very high level bloom around 0.067.
@@ -252,8 +252,7 @@ aug_rast_ci %>% terra::global(., "mean", na.rm=TRUE)
 sandusky_0816 %>% terra::global(., "mean", na.rm=TRUE)
 
 ```
-The mean value for all of Lake Erie on Aug 16 is about 0.0006 CI where the mean for the Sandusky Bay on Aug 16 is 
-0.0002 CI.
+The mean value for all of Lake Erie on Aug 16 is about 0.0006 CI where the mean for the Sandusky Bay on Aug 16 is 0.0002 CI.
 
 
 
@@ -277,6 +276,7 @@ tm_shape(sandusky_0816) +
            size=3) +
   tm_scalebar(position = c("left", "bottom"))
 
+#cannot seem to figure out why the title is so incredibly small?
 ```
 
 ### Questions for Task 2:
@@ -286,7 +286,7 @@ tm_shape(sandusky_0816) +
 -The mask function takes the raster and crops it to the exact boundary of the shapefile or area of interest, not just to a rectangular area surrounding it. We used both to see how a bounding area near sandusky bay would look compared to the exact shapefile outline of the bay (more precise)
 
 **Q2.2** The mean CI value for Sandusky Bay is likely different from the full lake mean. What could explain this? Does this necessarily mean Sandusky Bay has more or less cyanobacteria than average?
-- The mean value for Sandusky Bay doesn't necessarily mean there is less than average compared to all of Lake Erie, it may just be because Lake Erie had many more pixel values to take into account with the mean than Sandusky does because it is a smaller area. *************************************************************************************************************************** finish this
+- The mean value for Sandusky Bay doesn't necessarily mean there is less than average compared to all of Lake Erie, it may just be because Lake Erie had many more pixel values to take into account with the mean than Sandusky does because it is a smaller area. It might also be because Sandusky bay wasn't around the area that had the largest part of the bloom at the time and it could come up more in the western basin which the whole lake would capture.
 
 ---
 
@@ -348,7 +348,7 @@ CI_df <- CI_df %>%
          start_day = stringr::str_sub(file_name, 11, 12), #extracting day
          end_month = stringr::str_sub(file_name, 14, 15), #find the end month
          end_day = stringr::str_sub(file_name, 16, 17), # find end day
-         date= stringr::str_extract(file_name, "\\d+\\.?\\d*")) #plain date
+         date= stringr::str_extract(file_name, "\\d+\\.?\\d*")) #plain date, all numbers
 ```
 
 ### 3.3 Plot the time series
@@ -393,11 +393,12 @@ clean_sept_20 <- cleaned_raster_files[[3]]
 #new reclass matrix
 binary_raster <- function(x) {
   
-  rcl_matrix_new <- matrix(c(6.486344e-05,0.0613762,1),ncol = 3, byrow = TRUE)  
+  rcl_matrix_new <- matrix(c(0.00006, 0.07, 1,
+                          NA, NA, 0),ncol = 3, byrow = TRUE)  
   #expected high and low values
   
   #cleaned  up raster, setting invalid data to NA
-  binary_raster <- terra::classify(x, rcl = rcl_matrix_new, others=NA)Bu
+  binary_raster <- terra::classify(x, rcl = rcl_matrix_new, others=NA)
   
   return(binary_raster)
 }
@@ -408,6 +409,20 @@ final_sept20 <- binary_raster(clean_sept_20)
 
 #plotting to see if this worked
 plot(final_aug23)
+plot(final_sept20)
+
+#persistent bloom
+persistent_bloom <- final_aug23 * final_sept20
+plot(persistent_bloom, main="Persistent Bloom from Aug 23- Sept 20th")
+  #1 being the persistent pixels
+  #0 being only in one of the images
+
+#new bloom
+new_bloom <- final_sept20 - final_aug23
+plot(new_bloom, main="New Bloom Areas Shown by Pixels Colored as 1") 
+  #-1 is pixels from the first image
+  #0 are pixels that are the same between both
+  #1 are new bloom pixels only in sept 20
 ```
 
 ### Questions for Task 3:
@@ -438,7 +453,7 @@ bb_e_west_sister <- sf::read_sf("erie_raster_ex/bounds/bb_erie_west_sister.shp")
 
 #combine them
 combined_sf <- dplyr::bind_rows(bb_e_islands, bb_e_large, bb_e_maumee, bb_e_sandusky,
-                                bb_e_sand_plus,bb_e_west_sister) %>%
+                                bb_e_sand_plus,bb_e_west_sister) %>% #label AOI by hand
   mutate(AOI = c("e_islands", "e_large", "e_maumee", "e_sandusky", "e_sand_plus", "e_west_sister"))
 ```
 
@@ -449,15 +464,28 @@ Using the date you identified in Task 3.3 as having the highest mean bloom inten
 *Tip: `terra::extract()` returns a data frame. The `ID` column links rows to the AOI that was used for extraction. You can use `group_by()` and `summarize()` to aggregate.*
 
 ```{r zonal_extract, echo=TRUE, message=TRUE}
-# your code here
+#sept 20th had the highest value for me
+extracted_CI <- terra::extract(clean_sept_20, vect(combined_sf))
+
+#attach AOIs back to that new df
+extracted_CI$AOI <- combined_sf$AOI[extracted_CI$ID]
+
+#summarizing to find mean and max CI per AOI
+CI_summary <- extracted_CI %>%
+  group_by(AOI) %>% #use summarise not mutate bc it needs aggregation
+  summarise(mean_CI = mean(ts_2017.0920_0926.L4.LE3.CIcyano.MAXIMUM_7day, na.rm = TRUE),
+         max_CI = max(ts_2017.0920_0926.L4.LE3.CIcyano.MAXIMUM_7day, na.rm = TRUE))
+     
+      
 ```
 
 ### 4.3 Summary table
 
 Present your results as a clean summary table. Which AOI had the highest mean CI value on that date? Which had the highest maximum?
-
+-I had Erie Large, Erie Maumee, and Erie West Sister as all having the highest maximum CI value. I had Erie Sandusky with the highest mean value.
 ```{r summary_table, echo=TRUE, message=TRUE}
-# your code here
+#print summary!
+print(CI_summary)
 ```
 
 ### 4.4 Map with AOI overlays
@@ -465,14 +493,41 @@ Present your results as a clean summary table. Which AOI had the highest mean CI
 Create a `tmap` map showing the CI raster for your chosen date with the AOI boundaries overlaid. Use `tm_borders()` for the boundaries and label them if possible.
 
 ```{r map_with_aois, echo=TRUE, message=TRUE}
-# your code here
+#convert polygons to multistring to be able to color by border
+bb_borders <- st_cast(combined_sf, "MULTILINESTRING")
+
+#creating palette
+colors <- c("#626496", "#AC6A9F", "#DD708E", "#F5B355", "#E06046", "#BE2641")
+
+tm_shape(clean_sept_20) +
+  tm_raster( col.scale = tm_scale_continuous(values = c("#e5f5e0", "#31a354", "#006d2c")),
+             col.legend = tm_legend(title="Chlorophyll Cyanobacteria Index",
+                                    position = tm_pos_out("right", "center"),
+                                    orientation = "portrait")) +
+  tm_title("Chlorophyll Cyanobacteria Bloom in Lake Erie - September 20, 2017",
+           position = tm_pos_out("center", "top"),
+           size=3) +
+  tm_scalebar(position = c("right", "bottom")) +
+tm_shape(combined_sf) +
+    tm_lines(col = "AOI", lwd = 2, palette=colors,
+             col.legend = tm_legend(show = FALSE)) #+
+#tm_borders(col="AOI")
+
+#I can't seem to find the loophole to get this legend to go away or plot under the main raster
+  #tm_text("AOI", size = 0.7)
+
+
+
 ```
 
 ### Questions for Task 4:
 
 **Q4.1** You may have gotten `NA` values in your `terra::extract()` results for some AOIs. What could cause this? Name at least two reasons.
+-One main reason would be that some of those bb are extended past Lake Erie and could be reading land that was classified as NA in the original cleaning function.
+-Another reason could be that that area didn't have a valid DN because of cloud cover or some other factor.
 
 **Q4.2** Looking at the spatial distribution of your AOIs on the map, which areas do you expect to be most prone to severe blooms, and why? (Consider geography, hydrology, land use in the Lake Erie watershed.)
+- I expect Maumee, West Sister, and Sandusky to be very prone because those areas are closely tethered to the West Basin of Lake Erie and from a spatial analysis point of view, most of the pixels that they capture include coastlines and shallow areas, not just NA values and land. I also expect that these areas are the ones that are experiencing the closest and longest interaction with nutrients running of the landscapes to Lake Erie. The nutrient laden water is likely having the longest residence time, the water is the shallowest and mixing more frequently, and it is more secluded from the rest of the lake so a dilution is not occurring.
 
 ---
 
@@ -480,9 +535,12 @@ Create a `tmap` map showing the CI raster for your chosen date with the AOI boun
 ## Questions
 
 1. Throughout this lab you have been working with **raster** data. In what ways was the analysis workflow different from working with vector data (like you did in Labs 1–3)? What concepts translated directly, and what was fundamentally different?
+-The analysis workflow is a bit different because we aren't really just joining information, a lot of operations will be done spatially, but keeping that information all lined up can be difficult. Rasters will need the same CRS, Extent, Resolution, etc to make the operations successful, which can also prove to be quite frustrating at times. Creating data frames and summarizing information was relatively similar once the spatial operation was out of the way though.
 
 2. Cyanobacteria blooms are affected by temperature, nutrient runoff, and lake circulation. Based on the temporal patterns you observed in Task 3, does the timing of peak bloom match what you would expect ecologically? Explain your reasoning (I know you're not an expert on blooms - just demonstrate thinking).
+-Yes this bloom pattern makes sense to me ecologically because we are looking at the late summer and fall period. A lot of runoff has come off the land scape and now we are experiencing very warm temperatures and long exposure to sunlight that would promote these algal blooms. The lake isn't ready to turn over and go into cold stratification so it is likely constantly mixing.
 
 3. We used `terra::extract()` in Task 4 to perform a zonal summary. How does this relate conceptually to the **zonal operations** category of map algebra discussed in class?
+-This would relate to a zonal operation which is like a focal operation, just a bit more fancy. since we are using a vector (the shapefiles) to calculate some sort of value from a given raster, it would be the closest to that. Using the global operations based on that information would obviously become a global operation. But we aren't calculating a neighborhood or anything of that to make it local or focal.
 
 
