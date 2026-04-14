@@ -140,7 +140,7 @@ Filter the county geometry to Portage and Summit counties. Store the result as `
 
 ```{r study_area, echo=TRUE, message=TRUE}
 #creating study area
-sa <- allohio %>% dplyr::filter(NAME %in% c("Portage", "Summit"))
+sa <- allohio %>% dplyr::filter(NAME %in% c("Portage", "Summit")) %>% st_make_valid()
 
 #turn this into a bounding box
 oh_region <- sf::st_as_sfc(st_bbox(sa))
@@ -157,7 +157,8 @@ Build a map layer showing municipal boundaries with text labels for place names.
 
 ```{r places, echo=TRUE, message=TRUE}
 # load in oh_places
-oh_places <- sf::read_sf("./static_mapping/oh_places.gpkg") #geopackage
+oh_places <- sf::read_sf("./static_mapping/oh_places.gpkg") %>%
+  st_make_valid() #fix the validity issue later on
 
 #check crs
 st_crs(oh_places) == st_crs(sa) #yippee they match
@@ -165,21 +166,20 @@ st_crs(oh_places) == st_crs(sa) #yippee they match
 #filtering to just the study area
 places_sa <- sf::st_intersection(sa, oh_places)
 
-#plot to check
-plot(places_sa) #it worked, but there are many geometries
-
-#clean up the polygons
-places_sa <-st_collection_extract(places_sa,type= "POLYGON")
-
 #tmap
-places_map <- places_sa %>% group_by(NAME.1) %>%
-        tm_shape(places_sa) + 
+places_map_nolab <- tm_shape(places_sa) + 
+              tm_polygons(fill="#F8EDBE") +
+              tm_borders(col="black", lwd=1.5) 
+              #tm_labels_highlighted(text="NAME.1")
+              #tm_text("NAME.1", 
+                     # options = opt_tm_text(shadow=TRUE, remove_overlap = TRUE),
+                     # size = 0.9,  fontface = "bold")
+places_map <- tm_shape(places_sa) + 
               tm_polygons(fill="lightgrey") +
               tm_borders(col="black", lwd=1.5) +
-              tm_shape(places_centroids) +
-              tm_text("NAME.1", options = opt_tm_text(remove_overlap = TRUE), size = 1)
-
-
+              tm_text("NAME.1", 
+                     options = opt_tm_text(shadow=TRUE, remove_overlap = TRUE),
+                     size = 0.9,  fontface = "bold")
 places_map
 ```
 
@@ -208,8 +208,9 @@ plot(parks_sa) #it worked, but there are many geometries
 
 #tmap time
 parks_map <-tm_shape(parks_sa) + 
-              tm_polygons(fill="FEATTYPE", palette="brewer.greens") +
-              tm_borders(col="black", lwd=1.5)
+              tm_polygons(fill="FEATTYPE", palette="brewer.greens",
+                          title="Area Type") +
+              tm_borders(col="black", lwd=2)
 
 
 parks_map
@@ -245,10 +246,13 @@ st_crs(ps_water) == st_crs(sa)
 water_parks <- ps_water %>% 
   mutate(intersects_park = lengths(st_intersects(geometry, parks_sa)) >0 )
 
-plot(water_parks)
+# Filtering for only rivers that intersect parks
+rivers_in_parks <- water_parks %>% filter(intersects_park == TRUE)
 
-water_map <- tm_shape(water_parks) + 
-              tm_lines(col="blue", lwd=1.5)
+plot(rivers_in_parks)
+
+water_map <- tm_shape(rivers_in_parks) + 
+              tm_lines(col="#0019FF", lwd=2)
 water_map
 ```
 
@@ -258,13 +262,20 @@ Combine your places, parks, and water layers into a single map variable called `
 
 ```{r map_local, echo=TRUE, message=TRUE}
 # map map map
-map_local <- tmap_arrange(places_map, parks_map, water_map)
-
+map_local <- places_map_nolab + parks_map + water_map +
+        tm_shape(places_sa) + 
+              tm_text("NAME.1", 
+                     options = opt_tm_text(shadow=TRUE, remove_overlap = TRUE),
+                     size = 0.9,  fontface = "bold") +
+        tm_layout(title = "Parks and Rivers in Summit and Portage County",
+                  title.position = tm_pos_out("center", "top"))
 
 map_local
 ```
 
 **Reflection question 2 (answer in your repo):** Describe the cartographic decisions you made about visual hierarchy in this map. Which features should visually dominate, and what specific symbol choices (size, color, transparency) did you make to achieve that? Why?
+- This map was a bit challenging because there are many interesting and important features that need to be displayed with this map. I think the dominant feature that needs to be displayed is where parks are intersecting rivers/stream segments. To highlight this feature, I showed this area with a bright blue, thick line against the very pale yellow background showing just the summit and portage counties. Having the thicker line widths for the rivers helps to show their reaches when there are many boundaries and names of counties overlapping. The label for the cities was difficult to see in regular text settings so I assigned it a shadow.
+
 
 ---
 
@@ -281,7 +292,19 @@ Load `neoh_dem.tif` using `terra::rast()`.
 Before cropping, **project** it to match the CRS of `sa` using `terra::project()`. Then crop to the study area extent. Add a comment explaining your workflow choices.
 
 ```{r dem, echo=TRUE, message=TRUE}
-# your code here
+# Load in DEM
+neoh_dem <- terra::rast("./static_mapping/neoh_dem.tif") 
+
+# project dem, crop, and then mask to the study area
+dem <- neoh_dem %>%  #take raster in 
+  terra::project(., sa) %>% #project it to the same as sa
+  terra::crop(., sa) %>% #crop it to sa bbox
+  terra::mask(., sa) #mask to actual boundaries
+
+plot(dem) #plot to check result
+
+#not too large of a raster so I will project it first before cropping
+
 ```
 
 *Tip: Projecting a large raster can be slow. Cropping AFTER projecting (as shown here) crops the projected version; cropping BEFORE projecting (to a smaller area first) can be faster. There are trade-offs — consider what's appropriate here.*
@@ -299,13 +322,35 @@ Now build a more complete version of the local map that incorporates the DEM. Re
 Store this as `map_local_elev`.
 
 ```{r map_local_elev, echo=TRUE, message=TRUE}
-# your code here
+# make DEM tmap
+oh_dem <- tm_shape(dem) +
+  tm_raster(col.scale = tm_scale_continuous(values = "terrain"),
+            col.legend = tm_legend(position = tm_pos_out("center", "bottom"),
+                                   orientation = "landscape",
+                                    title="Elevation")) +
+  tm_shape(sa) + 
+    tm_fill(fill_alpha = 0.2) +
+    tm_borders(col = "black")
+
+oh_dem
+
+#combining the map
+map_local_elev <- oh_dem +
+      tm_shape(sa) + 
+        tm_fill(fill_alpha = 0.2) +
+        tm_borders("black", lwd=2) +
+  parks_map +
+  water_map +
+  tm_compass(type = "8star", position = c("right", "bottom")) +
+  tm_scalebar(position = c("right", "bottom")) +
+  tm_title_out("Parks and Intersecting Rivers in Portage and Summit Counties")
+  
 
 map_local_elev
 ```
 
 **Reflection question 3 (answer in your repo):** How does adding the elevation layer change the map's visual story? Did it create any visual hierarchy problems, and if so, how did you address them?
-
+-It changes the story because it adds another feature and even more information about the river segements and park boundaries by explaining how high they are and what direction they could be possibly flowing. I started off with a more green palette that made it very difficult to see the parks, but I switched to the terrain palette to keep it a little less cluttered.
 ---
 
 ## Task 4: Multi-panel arrangement and inset maps
@@ -319,10 +364,45 @@ This task has two parts. The first uses `tmap_arrange()` — a straightforward a
 Use `tmap_arrange()` to display `map_ohio` and `map_local_elev` side by side. Experiment with the `ncol` and `asp` arguments to get a reasonable layout.
 
 ```{r tmap_arrange, echo=TRUE, message=TRUE}
-# your code here
+# changing orientation of  legend to horizontal
+oh_dem_new <- tm_shape(dem) +
+  tm_raster(col.scale = tm_scale_continuous(values = "terrain"),
+            col.legend = tm_legend(position = tm_pos_out("center", "bottom") ,
+                                    title="Elevation")) +
+  tm_shape(sa) + 
+    tm_fill(fill_alpha = 0.2) +
+    tm_borders(col = "black")
+
+#recombining these maps together
+map_local_elev_new <- oh_dem_new +
+      tm_shape(sa) + 
+        tm_fill(fill_alpha = 0.2) +
+        tm_borders("black", lwd=2) +
+  parks_map +
+  water_map +
+tm_layout(
+  legend.outside = TRUE,
+    legend.outside.position = "bottom", #makes all legends outside
+    legend.stack = "horizontal", #stacks vertical
+    legend.outside.size = 0.2)+   # space reserved for legends)
+tm_compass(type = "8star", position = c("right", "bottom")) +
+tm_scalebar(position = c("right", "bottom")) +
+tm_title_out("Parks and Intersecting Rivers in Portage and Summit Counties")
+
+#changing their margins
+map_ohio1 <- map_ohio +
+  tm_layout(meta.margins = c(0.3, 0, 0.05, 0)) + #bottom, left, top, right
+  tm_title_out("Female Population Proportion in Ohio Counties")
+
+map_local_elev1 = map_local_elev_new +
+  tm_layout(meta.margins = c(0.3, 0, 0.05, 0))
+
+#new tmap arrange
+tmap_arrange(map_ohio1, map_local_elev1) #can't seem to stop those legends from overlapping
 ```
 
 **Reflection question 4 (answer in your repo):** `tmap_arrange()` is easy to use, but it has real limitations compared to a true inset. What are at least two limitations? (Think about how the two maps relate spatially and what information is or isn't communicated.)
+-Some limitations come with the maps appearing to be the same size when one is the entirety of ohio and the other is two small counties from that map. Another limitation is having the legends not overlapping, in weird spots, or changing when the maps need to be plotted. Another situation is that it can be hard to tell which one is the guiding map because you have to have them vertically or horizontally stacked, when you may want to focus on some information, you may have to sacrifice the plotting order to have context.
 
 ### 4.2 — Building the inset map
 
