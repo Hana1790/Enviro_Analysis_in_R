@@ -87,7 +87,7 @@ oh_census <- left_join(allohio, census, by="GEOID")
 ```
 
 Verify the join worked: how many rows does your joined object have? Does it match what you'd expect?
--This join is what I suspect because the census data had one entry for just the state of ohio, which is not included in the allohio geopackage that I loaded in. This join accounts for all counties being merged together
+-This join is what I suspect because the census data had one entry for just the state of ohio, which is not included in the allohio geopackage that I loaded in. This join accounts for all counties being merged together (88)
 
 
 ### 1.2 — Choose and justify a variable
@@ -554,9 +554,6 @@ nlcd_cols <- c(
 # Convert NLCD raster to categorical
 neoh_nlcd_new <- terra::as.factor(neoh_nlcd_new)
 
-#also converting emily's data to factor
-emily_data_sf <- terra::as.factor(emily_data_sf$SURE_year)
-
 
 #creating a map showing the dem of TRUC (environmental), the landuse designation (social), and emily's data points(vector)
 
@@ -579,18 +576,18 @@ TRUC_map <-
   tm_shape(emily_data_sf) +
     tm_dots(size="P_mg_kgsoil", fill="gold",
             size.legend = tm_legend("Measured Phosphorus per mg/kg of Soil")) +
-  tm_layout( #I can't seem to get this title any bigger, tried both tm_title and tm_layout
+  tm_layout(#I can't seem to get this title any bigger, tried both tm_title and tm_layout
       main.title = "Soil Phosphorus Measured Throughout the Newly Restored
 Trumbull Creek Wetland and its Previous National Land Cover Class Designation",
       main.title.size =0.7, #any higher shoots the title away from the map
       main.title.position = "center",
       main.title.fontface = "bold")
 
-TRUC_map
+TRUC_map 
 ```
 
 - Found the nlcd color palette here https://smalltownbigdata.github.io/feb2021-landcover/feb2021-landcover.html
-
+- I can't get the right colors to work and the title is a little small. I also couldn't figure out giving NLCD a proper label other than the numbers
 
 ---
 
