@@ -319,3 +319,68 @@ m.both #multilayer map
 
 amindianat/poptot proportion
 queen
+
+```{r}
+
+library(tidyverse)
+library(terra)
+library(sf)
+library(leaflet) #new
+library(leaflet.extras) #new
+library(spdep)
+
+#read and join data
+oh_counties <- sf::read_sf("./data/static_mapping/oh_counties.gpkg")
+oh_census <- sf::read_sf("./data/static_mapping/oh_counties_DP2020.csv")
+
+county_join <-left_join(oh_counties,oh_census, join_by("GEOIDFQ" == "geoid"))
+
+#looking at native american population
+# doing a proportion of total population
+county_census <- county_join |> 
+  mutate(prop_amindianat = as.numeric(amindianat)/ as.numeric(poptotal))
+
+#moran's I -LISA for native american population
+
+#Look at our data with a histogram and by county
+am.pop.counties <- county_census |> 
+    ggplot(aes(x = NAME, y = prop_amindianat)) +
+        geom_col(fill="steelblue") + 
+    labs(x="County Name",
+         y="Proportion of Population Per County",
+         title="Proportion of Native American Population in Ohio Counties") +
+        theme_minimal()
+
+am.pop.counties #very small proportions per county
+
+#check crs first
+sf::st_crs(county_census) 
+
+# then reproject to north american equidistant conic
+county_census.projected <- county_census %>% sf::st_transform(., "ESRI:102010")
+
+# Build spatial weights matrix
+coords <- sf::st_geometry(county_census)
+neighbors <- spdep::poly2nb(county_census, queen = TRUE)
+weights <- spdep::nb2listw(neighbors, style = "W", zero.policy = TRUE)
+
+# Compute Local Moran's I
+lisa <- spdep::localmoran(county_census$prop_amindianat, weights, zero.policy = TRUE)
+
+
+#make leaflet
+leaflet() |>
+    setView(lng= -81.34, lat= 41.145, zoom=10) |>
+    addProviderTiles(provers$Esri.NatGeoWorldMap) |>
+    addPolygons(data = county_census, popup = ~paste0(name, ": ", moranp))
+
+#choropleth map
+tm_shape(county_census) +
+  tm_polygons(fill = "prop_amindianat",
+              fill.scale = tm_scale_intervals(styler="jenks",
+                                              values="brewer.purples",
+                                              n=5),
+              fill.legend = tm_legend(title=" Proportion of American Indians and Native Americans"))
+
+```
+
