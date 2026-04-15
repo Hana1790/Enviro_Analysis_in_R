@@ -364,41 +364,43 @@ This task has two parts. The first uses `tmap_arrange()` — a straightforward a
 Use `tmap_arrange()` to display `map_ohio` and `map_local_elev` side by side. Experiment with the `ncol` and `asp` arguments to get a reasonable layout.
 
 ```{r tmap_arrange, echo=TRUE, message=TRUE}
-# changing orientation of  legend to horizontal
+#new dem to fix the legend stacking issue
 oh_dem_new <- tm_shape(dem) +
   tm_raster(col.scale = tm_scale_continuous(values = "terrain"),
-            col.legend = tm_legend(position = tm_pos_out("center", "bottom") ,
+            col.legend = tm_legend(position = tm_pos_out("center", "bottom"),
                                     title="Elevation")) +
   tm_shape(sa) + 
     tm_fill(fill_alpha = 0.2) +
     tm_borders(col = "black")
 
-#recombining these maps together
+oh_dem_new
+
+#recombining with the different legend set up now
 map_local_elev_new <- oh_dem_new +
       tm_shape(sa) + 
         tm_fill(fill_alpha = 0.2) +
         tm_borders("black", lwd=2) +
   parks_map +
   water_map +
-tm_layout(
-  legend.outside = TRUE,
-    legend.outside.position = "bottom", #makes all legends outside
-    legend.stack = "horizontal", #stacks vertical
-    legend.outside.size = 0.2)+   # space reserved for legends)
-tm_compass(type = "8star", position = c("right", "bottom")) +
-tm_scalebar(position = c("right", "bottom")) +
-tm_title_out("Parks and Intersecting Rivers in Portage and Summit Counties")
+  tm_compass(type = "8star", position = c("right", "bottom")) +
+  tm_scalebar(position = c("right", "bottom")) +
+  tm_title_out("Parks and Intersecting Rivers in Portage and Summit Counties")
+  
+#quick check
+map_local_elev_new
 
-#changing their margins
+#changing their margins so they fit together
 map_ohio1 <- map_ohio +
-  tm_layout(meta.margins = c(0.3, 0, 0.05, 0)) + #bottom, left, top, right
-  tm_title_out("Female Population Proportion in Ohio Counties")
+  tm_layout(meta.margins = c(0.3, 0, 0.02, 0)) + #bottom, left, top, right
+  tm_title_out("Female Population Proportion in Ohio Counties") 
 
-map_local_elev1 = map_local_elev_new +
-  tm_layout(meta.margins = c(0.3, 0, 0.05, 0))
+map_local_elev1 <- map_local_elev_new +
+  tm_layout(meta.margins = c(0.3, 0, 0.02, 0))
 
 #new tmap arrange
 tmap_arrange(map_ohio1, map_local_elev1) #can't seem to stop those legends from overlapping
+
+#also can't figure out why the titles are so small... I keep messing with it but no luck
 ```
 
 **Reflection question 4 (answer in your repo):** `tmap_arrange()` is easy to use, but it has real limitations compared to a true inset. What are at least two limitations? (Think about how the two maps relate spatially and what information is or isn't communicated.)
@@ -416,10 +418,11 @@ Below is a partially complete code skeleton. **Read every comment carefully** be
 # This is the small map of all of Ohio that shows where our study area is.
 # oh_region is the bounding box polygon you created in Task 2.1.
 
-map_inset <- tm_shape(___) + tm_polygons() +        # fill in: all Ohio counties
-  tm_shape(oh_region) + tm_borders(lwd = ___, col = "red") +  # fill in: border width
-  tm_layout(bg.color = "lightblue") +
-  tm_scalebar(position = c("left", "bottom"))
+map_inset <- tm_shape(allohio) + tm_polygons() +        # fill in: all Ohio counties
+  tm_shape(oh_region) + tm_borders(lwd = 2, col = "red") +  # fill in: border width
+  tm_layout(bg.color = "lightblue") #+
+  #tm_scalebar(position = c("left", "bottom"))
+ #I was getting that odd sbW scale bar issue later on
 
 
 # ---- Step 2: Normalize dimensions ----
@@ -440,8 +443,8 @@ norm_dim <- function(obj) {
 # Calculate dimensions for both maps
 # The main map is based on the study area bounding box (oh_region)
 # The inset map is based on all of Ohio
-main_dim <- norm_dim(___)  # fill in: use oh_region
-ins_dim  <- norm_dim(___)  # fill in: use the all-Ohio sf object
+main_dim <- norm_dim(oh_region)  # fill in: use oh_region
+ins_dim  <- norm_dim(allohio)  # fill in: use the all-Ohio sf object
 
 
 # ---- Step 3: Define viewport positions ----
@@ -452,7 +455,7 @@ ins_dim  <- norm_dim(___)  # fill in: use the all-Ohio sf object
 main_vp <- viewport(width = main_dim[1], height = main_dim[2])
 
 ins_vp <- viewport(
-  width  = ins_dim[1] * 0.4,              # scale the inset to 40% of normalized Ohio width
+  width  = ins_dim[1] * 0.3,              # scale the inset to 40% of normalized Ohio width
   height = ins_dim[2] * 0.4,              # scale proportionally
   x      = unit(1, "npc") - unit(0.5, "cm"),  # right edge of device minus a small margin
   y      = unit(0.01, "npc"),             # near the bottom of the device
@@ -467,7 +470,7 @@ ins_vp <- viewport(
 #   so the inset is positioned relative to the main map, not the whole device.
 
 grid.newpage()
-print(map_local_elev, vp = main_vp)
+print(map_local_elev1, vp = main_vp)
 pushViewport(main_vp)
 print(map_inset, vp = ins_vp)
 ```
@@ -481,6 +484,7 @@ Your first attempt will not look perfect — that is expected and intentional. Y
 *Note: Getting the position right requires iterating. Try different values for the scale factor (e.g., `0.3`, `0.5`) and the margin. A scale factor around `0.35–0.45` and bottom-right or bottom-left placement usually works well for this study area.*
 
 **Reflection question 5 (answer in your repo):** In your own words, explain what `norm_dim()` is doing and why it is necessary. What specific visual problem would occur if you skipped that step and passed the raw coordinate extents to `viewport()` directly?
+- norm_dim() takes a bounding box of this area sf object and turns it into a width and height with normalized proportions so that it can fit within a viewport basically. Without this function, the viewport wouldn't be created because it can't take geographic points and turn it into a width and height later on. I think it would end up becoming display sizes and the viewport would fail.
 
 ---
 
@@ -496,7 +500,38 @@ Using whatever spatial data, extent, and domain you choose, create an original s
 You may use data from any of the course datasets (CBW, Ohio, Lake Erie) or data you obtain independently. If using external data, document the source in a comment.
 
 ```{r your_map, echo=TRUE, message=TRUE}
-# your code here
+# One of the undergrads in my lab group collected data at the same wetland I did, I will be using some of her SURE work and data points for this exercise
+emily_data <- read_csv("./EmilyCampbell_Combined_SURE_Work.csv")
+
+#NE Ohio national landuse cover data
+neoh_nlcd <- terra::rast("./neoh_nlcd.tif") 
+
+#DEM of the wetland area (TRUC aka Trumbull Creek) itself
+TRUC_dem <- terra::rast("./dem_partially_filled.tif")
+
+# Study area of project
+boundary <- sf::read_sf("./PROJECT_LIMITS.shp") 
+
+#checking crs of these rasters
+st_crs(neoh_nlcd)
+st_crs(TRUC_dem)
+
+#reprojecting boundary to the same as SA from earlier
+boundary_new <- st_transform(boundary, st_crs(sa))
+
+TRUC_dem_new <- TRUC_dem %>%  #take raster in 
+  terra::project(., boundary_new) %>% #project it to the same as sa
+  terra::crop(., boundary_new) %>% #crop it to boundary bbox
+  terra::mask(., boundary_new)  #mask to actual boundaries
+
+neoh_nlcd_new <- neoh_dem %>%  #take raster in 
+  terra::project(., boundary_new) %>% #project it to the same as sa
+  terra::crop(., boundary_new) %>% #crop it to boundary bbox
+  terra::mask(., boundary_new) #mask to actual boundaries
+
+#plotting to do a quick check
+plot(neoh_nlcd_new)
+plot(neoh_nlcd)
 ```
 
 ---
