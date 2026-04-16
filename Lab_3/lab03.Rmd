@@ -304,7 +304,7 @@ f.pop.states.choropleth
 sf::st_crs(f.pop.states) 
 
 # then reproject to north american equidistant conic
-f.pop.states.projected <- f.pop.states %>% sf::st_transform(., "ESRI:102010")
+f.pop.states.projected <- f.pop.states %>% sf::st_transform(., "ESRI:102010") # minimize distortion of distance measurements
 
 # plot it again to make sure nothing broke
 tmap::tm_shape(f.pop.states.projected) + tm_polygons()

@@ -328,6 +328,8 @@ library(sf)
 library(leaflet) #new
 library(leaflet.extras) #new
 library(spdep)
+library(qualpalr)
+library(tmap)
 
 #read and join data
 oh_counties <- sf::read_sf("./data/static_mapping/oh_counties.gpkg")
@@ -340,7 +342,7 @@ county_join <-left_join(oh_counties,oh_census, join_by("GEOIDFQ" == "geoid"))
 county_census <- county_join |> 
   mutate(prop_amindianat = as.numeric(amindianat)/ as.numeric(poptotal))
 
-#moran's I -LISA for native american population
+## Moran's I -LISA for native american population
 
 #Look at our data with a histogram and by county
 am.pop.counties <- county_census |> 
@@ -357,30 +359,132 @@ am.pop.counties #very small proportions per county
 sf::st_crs(county_census) 
 
 # then reproject to north american equidistant conic
-county_census.projected <- county_census %>% sf::st_transform(., "ESRI:102010")
+#county_census_projected <- county_census %>% sf::st_transform(., "ESRI:102010")
+ # minimize distortion of distance measurements
 
 # Build spatial weights matrix
 coords <- sf::st_geometry(county_census)
-neighbors <- spdep::poly2nb(county_census, queen = TRUE)
-weights <- spdep::nb2listw(neighbors, style = "W", zero.policy = TRUE)
+nb  <- spdep::poly2nb(county_census, queen = TRUE)
+#average number of links = 5.25, it accounts for all counties
+
+#row standardize the weights
+lw  <- spdep::nb2listw(nb, style = "W", zero.policy = TRUE)
 
 # Compute Local Moran's I
-lisa <- spdep::localmoran(county_census$prop_amindianat, weights, zero.policy = TRUE)
+lisa <- spdep::localmoran(county_census$prop_amindianat, lw, zero.policy = TRUE)
+county_census$local_I  <- lisa[, "Ii"] #moran's i column
+county_census$lisa_pval <- lisa[, "Pr(z != E(Ii))"] #moran's pvalue
+
+#LISA Quadrant Labels
+# Mean-center the variable and the spatial lag
+x     <- county_census$prop_amindianat
+x_lag <- lag.listw(lw, x, zero.policy = TRUE)
+
+x_mean     <- mean(x,     na.rm = TRUE)
+xlag_mean  <- mean(x_lag, na.rm = TRUE)
 
 
-#make leaflet
-leaflet() |>
-    setView(lng= -81.34, lat= 41.145, zoom=10) |>
-    addProviderTiles(provers$Esri.NatGeoWorldMap) |>
-    addPolygons(data = county_census, popup = ~paste0(name, ": ", moranp))
+# create the quadrants
+county_census <- county_census %>%
+  mutate(
+    quad = case_when(
+      x >  x_mean & x_lag >  xlag_mean ~ "HH",
+      x >  x_mean & x_lag <= xlag_mean ~ "HL",
+      x <= x_mean & x_lag >  xlag_mean ~ "LH",
+      x <= x_mean & x_lag <= xlag_mean ~ "LL"
+    ),
+    # Mark non-significant as NS (p > 0.05)
+    quad_sig = ifelse(lisa_pval > 0.05, "NS", quad))
 
-#choropleth map
-tm_shape(county_census) +
-  tm_polygons(fill = "prop_amindianat",
-              fill.scale = tm_scale_intervals(styler="jenks",
-                                              values="brewer.purples",
-                                              n=5),
-              fill.legend = tm_legend(title=" Proportion of American Indians and Native Americans"))
+
+
+county_wgs <- county_wgs |>
+  mutate(color =  case_when(
+                              quad_sig == "HH" ~ "#d7191c",
+                              quad_sig == "HL" ~ "#fdae61",
+                              quad_sig == "LH" ~ "#abd9e9",
+                              quad_sig == "LL" ~ "#2c7bb6",
+                              quad_sig == "NS" ~ "#d3d3d3"))
+
+#turn these levels into factor levels
+county_census$quad_sig <- factor(county_census$quad_sig, levels = quad_levels)
+
+#Popup
+county_census <- county_census %>%
+  mutate(
+    popup_lisa = paste0(
+      "<b>", NAME, " County</b><br>",
+      "LISA Quadrant: <b>", quad_sig, "</b><br>",
+      "Local Moran p-value: <b>", round(lisa_pval, 4), "</b>" ))
+
+
+#have to make color palette for choropleth
+pal_purple <- colorNumeric(
+  palette = "Purples",
+  domain  = county_wgs$prop_amindianat)
+
+
+#Reproject for Leaflet
+county_wgs <- st_transform(county_census, crs = 4326)
+
+#Map
+leaflet(county_wgs) %>%
+  addMapPane("choropleth", zIndex = 410) %>%
+  addMapPane("lisa",     zIndex = 420) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap,
+                   group = "NatGeo World Map")  %>%
+  addProviderTiles(providers$Esri.WorldImagery,
+                   group = "Satellite View")  %>%
+  setView(lng = -81.34, lat = 41.145, zoom = 6) %>%
+  addPolygons(
+    group = "Choropleth Map",
+      fillColor = ~pal_purple(prop_amindianat),
+      fillOpacity = 0.7,
+      color = "Purples",
+      weight = 0.8,
+      options = pathOptions(pane = "choropleth")
+    ) %>%
+  addPolygons(
+    group= "LISA Quadrant",
+    fillColor   = ~color,
+    fillOpacity = 0.8,
+    color       = "white",
+    weight      = 1,
+    popup       = ~popup_lisa,
+    highlightOptions = highlightOptions(
+      weight       = 2,
+      fillOpacity  = 0.9,
+      bringToFront = TRUE
+    )) %>%
+  addLegend(
+    position = "bottomright",
+    title    = "LISA Quadrant",
+    colors   = unname(quad_colors),
+    labels   = c("HH – High-High (cluster)",
+                 "HL – High-Low (outlier)",
+                 "LH – Low-High (outlier)",
+                 "LL – Low-Low (cluster)",
+                 "NS – Not Significant"), opacity  = 0.9) %>% 
+  addLayersControl(
+    baseGroups = c("NatGeoWorldMap", "Satellite View"), 
+    overlayGroups = c("Choropleth Map", "LISA Quadrant"), 
+    options = layersControlOptions(collapsed = FALSE))
+
+
+#choropleth map creation
+choropleth <- 
+  tm_shape(county_census) + 
+    tm_polygons(fill = "prop_amindianat", 
+                fill.scale = tm_scale_intervals(style = "jenks", 
+                                                values = "brewer.purples", n = 5),
+                fill.legend = tm_legend(title = "Proportion of American Indians 
+      and Native Americans")) + 
+    tm_borders(lwd = 1.5, col = "black") 
+
+#check choropleth map of American Indian/ Native American Population Proportion
+choropleth
+
+
 
 ```
-
+https://r-statistics.co/Interactive-Maps-in-R-with-leaflet.html
