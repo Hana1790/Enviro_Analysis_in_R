@@ -99,6 +99,7 @@ d.sex.by.age <- get_acs(geography = "county",
                       geometry = T, 
                       year = 2020)
 
+
 glimpse(d.sex.by.age)
 ```
 
@@ -251,6 +252,9 @@ tmap::tm_shape(f.pop.states) + tm_polygons()
 f.pop.states <- f.pop.states |>
   group_by(STATEID) |>
   mutate(avg_state_pop = mean(B01001_034E, na.rm=TRUE)) #specific variable I wanted
+
+#adding a line to export this table to use in lab 6
+#sf::st_write(f.pop.states, "./f.pop.states.gpkg")
 
 ```
 I decided to do the average county population by state since the county population may be larger for states with more counties
