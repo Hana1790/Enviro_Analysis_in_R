@@ -45,6 +45,9 @@ library(sf)
 library(leaflet)
 library(tidyverse)
 library(spdep)   # needed for Task 2 (Moran/LISA)
+library(leaflet.extras) #extra functionality
+library(raster) # to use raster images in leaflet
+library(dplyr)
 ```
 
 *Note: You may need additional packages depending on your Task 3 choices. Load them here.*
@@ -80,7 +83,7 @@ unique_bmps <- bmps |> mutate(COUNTYFP10 = stringr::str_sub(GeographyName, 3, 5)
 
 #unique counties
 unique_counties <- counties |>
-  select(STATEFP10, COUNTYFP10, geometry, NAMELSAD10) |> 
+  dplyr::select(STATEFP10, COUNTYFP10, NAMELSAD10, geometry) |> 
   distinct() #keeping only the unique counties (not all entries)
 
 #combine counties and BMPS by STATE and COUNTY FP10
@@ -148,7 +151,6 @@ leaflet(counties_bmp) %>%
 ```
 
 **Reflection question 1 (answer in your repo):** In `tmap`, classification method choices (jenks, quantile, etc.) are made when you call `tm_polygons()`. In Leaflet, you define the palette and breaks separately using `colorBin()`, `colorQuantile()`, or `colorNumeric()`. What are the trade-offs of this approach? Does separating the palette from the geometry layer give you more or less flexibility? Give a specific example.
-
 - I think there are some tradeoffs by using these two methods, but in general I think separating the palette from the geometry layer could give you more flexibility. In scenarios when you need to have lots of control over the palettes or ranges, using the leaflet method allows you to preset different colors and breaks to the data which can be resued over time in different maps. This allows a consistent and steady color scheme and helps with publishable figures. Also, being able to control it for multiple different layers can help you keep your code tidy and functioning. On the other hand, it is very simple and quick to just toss in the method choice within the tmap settings, which allows for quick, easy plotting if the map is just a check for future work.
 
 ---
@@ -314,18 +316,20 @@ neoh_nlcd <- terra::rast("./lab5_data/neoh_nlcd.tif")
 #DEM of the wetland area (TRUC aka Trumbull Creek) itself
 TRUC_dem <- terra::rast("./lab5_data/dem_partially_filled.tif")
 
-# Study area of project
+# Study area of project - TRUC parcel
 boundary <- sf::read_sf("./lab5_data/PROJECT_LIMITS.shp") 
 
-#checking crs of these rasters
-st_crs(neoh_nlcd)
-st_crs(TRUC_dem)
+#checking crs of these rasters and shapefile
+st_crs(neoh_nlcd) #Albers Conic
+st_crs(TRUC_dem) #WGS 84, zone 17N
+st_crs(boundary) #NAD 83
 
-#reprojecting boundary to the same as SA from earlier
-boundary_new <- st_transform(boundary, st_crs(sa))
+
+#reprojecting boundary to WGS 84
+boundary_new <- st_transform(boundary, crs= 4326)
 
 TRUC_dem_new <- TRUC_dem %>%  #take raster in 
-  terra::project(., boundary_new) %>% #project it to the same as sa
+  terra::project(., boundary_new) %>% #project it to the same as study area
   terra::crop(., boundary_new) %>% #crop it to boundary bbox
   terra::mask(., boundary_new)  #mask to actual boundaries
 
@@ -335,58 +339,9 @@ neoh_nlcd_new <- neoh_nlcd %>%  #take raster in
   terra::crop(., boundary_new) %>% #crop it to boundary bbox
   terra::mask(., boundary_new) #mask to actual boundaries
 
-#getting the real nlcd color palette
-nlcd_cols <- c(
-  "11" = "#476BA1",  # Open Water
-  "21" = "#DDC9C9",  # Developed, Open Space
-  "22" = "#D89382",  # Developed, Low Intensity
-  "23" = "#ED0000",  # Developed, Medium Intensity
-  "24" = "#AA0000",  # Developed, High Intensity
-  "31" = "#B2ADA3",  # Barren
-  "41" = "#68AA63",  # Deciduous Forest
-  "42" = "#1C6330",  # Evergreen Forest
-  "43" = "#B5C98E",  # Mixed Forest
-  "52" = "#CCBA7C",  # Shrub/Scrub
-  "71" = "#E2E2C1",  # Grassland/Herbaceous
-  "81" = "#DED83E",  # Pasture/Hay
-  "82" = "#AA7028",  # Cultivated Crops
-  "90" = "#BAD8EA",  # Woody Wetlands
-  "95" = "#70A3BA")   # Emergent Herbaceous Wetlands
+# cropping emily's points to only within this parcel boundary
+emily_points_inside <- st_filter(emily_data_sf, boundary_new)
 
-#had issues with the categorical raster, now I am converting it to a factor first
-# Convert NLCD raster to categorical
-neoh_nlcd_new <- terra::as.factor(neoh_nlcd_new)
-
-
-#creating a map showing the dem of TRUC (environmental), the landuse designation (social), and emily's data points(vector)
-
-TRUC_map <-
-  tm_shape(TRUC_dem_new) + #raster dem of TRUC
-    tm_raster(col.scale = tm_scale_continuous(values = "terrain"),
-              col.legend = tm_legend(position = tm_pos_out("center", "bottom"),
-                                     title="Elevation",
-                                     orientation="landscape")) + #legend on the bottom
-  tm_shape(boundary_new) +  #TRUC shapefile parcel boundary
-    tm_fill(fill_alpha = 0.2) +
-    tm_borders(col = "black") +
-  tm_shape(neoh_nlcd_new) +
-    tm_raster( #for some reason the colors are breaking and are not plotting on here :(
-          col.scale = tm_scale_categorical(values = nlcd_cols), #categorical data and my color palette
-          col_alpha = 0.6, #slightly transparent
-          title = "Historic NLCD Land Cover Classes") +
-      tm_scalebar(position = c("center", "bottom")) +
-      tm_compass(position = c("right", "top"), size = 1.5) +
-  tm_shape(emily_data_sf) +
-    tm_dots(size="P_mg_kgsoil", fill="gold",
-            size.legend = tm_legend("Measured Phosphorus per mg/kg of Soil")) +
-  tm_layout(#I can't seem to get this title any bigger, tried both tm_title and tm_layout
-      main.title = "Soil Phosphorus Measured Throughout the Newly Restored
-Trumbull Creek Wetland and its Previous National Land Cover Class Designation",
-      main.title.size =0.7, #any higher shoots the title away from the map
-      main.title.position = "center",
-      main.title.fontface = "bold")
-
-TRUC_map 
 
 ```
 
@@ -408,22 +363,96 @@ Build the Leaflet map with the following requirements:
 Document your "one thing" choice in a comment explaining what it is and why it fits your map.
 
 ```{r task3_map, echo=TRUE, message=TRUE}
-# your code here
+# My "one thing": I added attribute data pop ups for this map. I wanted the size of the yellow circles to indicate how much phosphorus (mg/kg soil) was measured at each location, but it can vary widely throughout the site. Having the pop ups helps keep that data associated with the map without clustering too much. I don't think a legend would have conveyed that data very well.
 
-# My "one thing": [describe what you added and why it's applicable]
+# I need to convert all of my raster files using the Raster package --> not terra
+dem_raster <- raster::raster(TRUC_dem_new)  # convert terra -> raster
+nlcd_raster <- raster::raster(neoh_nlcd_new)
+
+# Creating color palettes for each of my rasters
+# DEM: using a continuous terrain palette to visualize it
+pal_dem <- colorNumeric(palette = terrain.colors(7), 
+                        values(dem_raster), 
+                        na.color = "transparent")
+
+# NLCD: categorical, I'm choosing to map NLCD codes to standard colors
+nlcd_vals <- unique(values(nlcd_raster)) #makes sure it doesn't repeat over again
+pal_nlcd <- colorFactor(palette = "Set3", 
+                        domain = nlcd_vals, 
+                        na.color = "transparent")
+#popup of the phosphorus data
+emily_points_inside <- emily_points_inside %>%
+  mutate(
+    popup_lisa_new = paste0(
+      "H2Ohio Sampling ID: <b>", H2Ohio_ID, " </b><br>",
+      "Phosphorus (mg/kg soil): <b>", round(P_mg_kgsoil, 2), "</b><br>"))
+
+# Creating the actual map now
+leaflet() %>% #leaving this blank since its not one data set
+    addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>% #basemap 1
+    addProviderTiles(providers$OpenStreetMap, group = "OSM") %>% #basemap 2
+  addRasterImage(dem_raster, # raster input
+                 colors = pal_dem, 
+                 opacity = 0.7, 
+                 group = "DEM of TRUC") %>%
+  addRasterImage(nlcd_raster, #NLCD raster!
+                 colors = pal_nlcd, 
+                 opacity = 0.7, 
+                 group = "NLCD Classifications") %>%
+   addPolygons(data = boundary_new, #boundary parcel of TRUC 
+              color = "blue", 
+              weight = 4, 
+              fill = FALSE, 
+              group = "Study Area") %>%
+  addCircleMarkers(data = emily_points_inside,
+                   radius = ~P_mg_kgsoil, #base size off of amount of Phosphorus
+                   color = "yellow", 
+                   fillOpacity = 0.9,
+                   popup       = ~popup_lisa_new,  
+                   group = "Sample Points") %>%
+  addLegend(pal = pal_dem, #DEM legend and palette
+            values = values(dem_raster),
+            title = "Elevation (m)", 
+            position = "bottomright", 
+            group = "DEM of TRUC") %>%
+  addLegend(pal = pal_nlcd,
+            values = nlcd_vals,
+            title = "NLCD Land Cover", 
+            position = "bottomleft", 
+            group = "NLCD Classifications") %>%
+  addLayersControl(
+    baseGroups = c("Satellite", "OSM"),
+    overlayGroups = c("DEM of TRUC", "NLCD Classifications", "Study Area", "Sample Points"),
+    options = layersControlOptions(collapsed = FALSE))
+
+
+
 ```
+**color brewer palettes https://r-graph-gallery.com/38-rcolorbrewers-palettes.html
+https://www.datanovia.com/en/blog/top-r-color-palettes-to-know-for-great-data-visualization/
+
+
 
 **Reflection question 3 (answer in your repo):** Describe the one extra feature you added and justify why it is meaningful for your specific map — not just technically interesting, but cartographically or analytically useful for the story you are trying to tell.
+- The extra feature I added was not that complex, it was just pop ups that describe the amount of phosphorus measured and the H2Ohio sampling ID that was used. Having this popup would be really helpful for people in my lab group that would want to take a quick glance at a map and where the zones of phosphorus might be clustered in relation to the elevation or proximity to water source. I think having this information displayed in a table or legend can sometimes make it less visually appealing and quite busy, especially if there are many other variables or data sources being shown. I think having these as popups keep its a bit less busy, but allows the user to look more in depth if they choose. 
 
 ---
 
 ## Questions
 
 1. Reflect on the labs from this semester. What did you learn? What did you like? What did you not like? (Be specific — vague answers will receive partial credit.)
+- I feel like I learned a lot throughout the year. At the start I had a very vague, but broad understanding of geospatial analysis and coding from a project I did in my undergrad. I learned many new practices and techniques like GitHub, organizing my data, dynamic vs static mapping, and more about the tidyverse world. I really enjoyed getting to practice some of these skills using real data from either Dr. Bitterman or my own research because I can use it to help interpret new information I collect later on in my dissertation.
+-I also spent very little time making functions and understanding how they worked before this class so that was really huge for me to be challenged to write my own and now seeing areas in my old code where I could have used them has been super eye opening. - I didn't love spending so much time in tmap, I completely understand why we are taught that and it can be a helpful tool, I wish we could have spent more time working in ggplot and seeing some of the ggspatial code, but with the the understanding I have now, I could easily apply it.
 
 2. In this lab, all three tasks involved taking existing analysis and presenting it interactively. What does Leaflet add beyond what `tmap` could do? And conversely, what did you give up by switching to Leaflet? Consider both technical and cartographic dimensions.
+- Leaflet enables us advanced customization with specific palettes, fills, colors, labeling schemes, and the ability to have minimaps, popups, highlighting, and other visually significant cartographic features. It also allows people the ability to toggle through several different created maps without needing several separate printouts or overly busy static and somewhat dynamic tmaps. It allows people to sift through different data with a simple click and to view the world along side of it, instead of just a plain background or a crazy view port. 
+- Leaflet has many different plugins, many of which I haven't tackled yet, like the swiping feature and drawing and editing tools. This takes data visualization beyond the classic bounds of tmap. However, leaflet can be quite picky and often doesn't play well with raster data and needs to use the outdated Raster package or changed visualization to have the same flexibility that tmap has built into it. 
+- In the same view, tmap is quite simple, easily layered, and has similar syntax to ggplot which allows more people to quickly access it to visualize data. Tmap can become interactive which gives it the edge of both static and dynamic mapping where leaflet is only used for dynamic mapping. Along with that, for people who don't need a lot of customization, tmap quickly handles formatting and palettes with the styles functionality.
+
 
 3. Describe the "one thing" you chose to add to your map in Task 3. What did you implement, why is it applicable to your specific map, and how does it change the user's experience compared to a static version?
+-The extra feature I added was not that complex, it was just pop ups that describe the amount of phosphorus measured and the H2Ohio sampling ID that was used. Having this popup would be really helpful for people in my lab group that would want to take a quick glance at a map and where the zones of phosphorus might be clustered in relation to the elevation or proximity to water source. 
+-Having this information traditionally displayed in a table or legend can make it far less visually interesting and harder to interpret without having the relative size of the circle markers corresponding to the amount of phosphorus measured and having the pop up there to only appear when needed. The static version would have had to had the circles labeled which is often quite busy and hard to read, especially at a site this small with samples taken so closely together, but it also limits what you can display. i chose to just show the H2Ohio ID along with the Phosphorus, but those pop ups could have been much longer and customized with the metals count, the year it was sampled, a whole suite of environmental details, etc. Having this as a dynamic map allows the user to have a more interactive experience and have much more control over what portions of this data (ecological and sociological) that they are viewing and interpreting at a single point in time. It also is handy for when people might have questions about the terrain in relation to either of the basemaps (proximity to features identified through satellite or cities).
 
 ---
 
