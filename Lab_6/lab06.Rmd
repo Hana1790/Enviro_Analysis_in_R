@@ -169,8 +169,36 @@ Go back to your Lab 3 code. Reload the spatial data and rerun the Moran/LISA ana
 f.pop.states.1 <- sf::read_sf("./f.pop.states.gpkg") 
 
 f.pop.states.1 <- f.pop.states.1 |>
-  group_by(GEOID) |> #grouping by the county and state
   mutate(female_proportion = (B01001_034E/B01001_001E)) # female (22-24) proportion of total pop in each county
+
+# Build spatial weights matrix
+coords <- sf::st_geometry(f.pop.states.1)
+nb  <- spdep::poly2nb(f.pop.states.1, queen = TRUE)
+
+#row standardize the weights
+lw  <- spdep::nb2listw(nb, style = "W", zero.policy = TRUE)
+
+# Compute Local Moran's I
+lisa <- spdep::localmoran(f.pop.states.1$female_proportion, lw, zero.policy = TRUE)
+f.pop.states.1$local_I  <- lisa[, "Ii"] #moran's i column
+f.pop.states.1$lisa_pval <- lisa[, "Pr(z != E(Ii))"] #moran's pvalue
+
+#LISA Quadrant Labels
+# Mean-center the variable and the spatial lag
+x     <- f.pop.states.1$female_proportion
+x_lag <- lag.listw(lw, x, zero.policy = TRUE)
+x_mean     <- mean(x,     na.rm = TRUE)
+xlag_mean  <- mean(x_lag, na.rm = TRUE)
+
+
+# create the quadrants
+counties_lisa <- f.pop.states.1 %>%
+  mutate(
+    quad = case_when(
+      x >  x_mean & x_lag >  xlag_mean ~ "HH",
+      x >  x_mean & x_lag <= xlag_mean ~ "HL",
+      x <= x_mean & x_lag >  xlag_mean ~ "LH",
+      x <= x_mean & x_lag <= xlag_mean ~ "LL"))
 
 
 ```
@@ -180,9 +208,9 @@ f.pop.states.1 <- f.pop.states.1 |>
 LISA quadrants are a categorical variable (four classes). Use `colorFactor()` instead of `colorBin()`. Assign a distinct, meaningful color to each quadrant (HH, HL, LH, LL). A common convention is warm colors for High clusters and cool colors for Low clusters.
 
 ```{r task2_palette, echo=TRUE, message=TRUE}
-# your code here
-# example structure:
-# pal_lisa <- colorFactor(palette = c(...), levels = c("HH", "HL", "LH", "LL"))
+# making palette for the lisa, not coding it into the df
+pal_lisa <- colorFactor(palette = c("#d7191c","#fdae61","#abd9e9","#2c7bb6"), 
+                        levels = c("HH", "HL", "LH", "LL"))
 ```
 
 ### 2.3 — Build the LISA map
@@ -195,7 +223,54 @@ Build the Leaflet map with the following requirements:
 - A legend
 
 ```{r task2_map, echo=TRUE, message=TRUE}
-# your code here
+
+#Popup to get the moran's i and the p-value
+counties_lisa <- counties_lisa %>%
+  mutate(
+    popup_lisa = paste0(
+      "<b>", NAME, " County</b><br>",
+      "LISA Quadrant: <b>", quad, "</b><br>",
+      "Local Moran p-value: <b>", round(lisa_pval, 4), "</b>" ))
+
+#check the crs before plotting
+st_crs(counties_lisa) # its the 1983 datum so it needs reprojected for leaflet
+
+#transform to leaflet crs
+counties_lisa <- st_transform(counties_lisa, crs = 4326)
+
+#turn quad into factor 
+counties_lisa$quad <- as.factor(counties_lisa$quad)
+
+#Map
+leaflet(counties_lisa) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap,
+                   group = "NatGeo World Map")  %>% #base map 1
+  addProviderTiles(providers$Esri.WorldImagery,
+                   group = "Satellite View")  %>% #base map 2
+  addProviderTiles(providers$Stadia.StamenWatercolor,
+                   group = "Stamen Watercolor")  %>% #base map 3
+  addPolygons( #LISA quadrant map
+    group= "LISA Quadrant",
+    fillColor   = ~pal_lisa(quad),
+    fillOpacity = 0.9,
+    color       = "black",
+    weight      = 2,
+    popup       = ~popup_lisa,
+    highlightOptions = highlightOptions(
+      weight       = 2,
+      fillOpacity  = 0.9,
+      bringToFront = TRUE
+    )) %>%
+  addLegend(
+  position = "bottomright", #stacking legends
+  title    = "LISA Quadrant",
+  colors   = pal_lisa(unique(counties_lisa$quad)), #this makes it just appear once
+  labels   = unique(counties_lisa$quad), #this makes so that it only prints the values once, not 5 times
+  opacity  = 0.9) %>%
+  addLayersControl(
+    baseGroups = c("NatGeo World Map", "Satellite View", "Stamen Watercolor"), 
+    overlayGroups = "LISA Quadrant", 
+    options = layersControlOptions(collapsed = FALSE))
 ```
 
 *Tip: The `addLayersControl()` function accepts `baseGroups` (radio buttons, one active at a time) and `overlayGroups` (checkboxes, multiple can be active). Basemaps should be `baseGroups`.*
