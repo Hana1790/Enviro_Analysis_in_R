@@ -149,6 +149,8 @@ leaflet(counties_bmp) %>%
 
 **Reflection question 1 (answer in your repo):** In `tmap`, classification method choices (jenks, quantile, etc.) are made when you call `tm_polygons()`. In Leaflet, you define the palette and breaks separately using `colorBin()`, `colorQuantile()`, or `colorNumeric()`. What are the trade-offs of this approach? Does separating the palette from the geometry layer give you more or less flexibility? Give a specific example.
 
+- I think there are some tradeoffs by using these two methods, but in general I think separating the palette from the geometry layer could give you more flexibility. In scenarios when you need to have lots of control over the palettes or ranges, using the leaflet method allows you to preset different colors and breaks to the data which can be resued over time in different maps. This allows a consistent and steady color scheme and helps with publishable figures. Also, being able to control it for multiple different layers can help you keep your code tidy and functioning. On the other hand, it is very simple and quick to just toss in the method choice within the tmap settings, which allows for quick, easy plotting if the map is just a check for future work.
+
 ---
 
 ## Task 2: LISA map from Lab 3
@@ -228,7 +230,7 @@ Build the Leaflet map with the following requirements:
 counties_lisa <- counties_lisa %>%
   mutate(
     popup_lisa = paste0(
-      "<b>", NAME, " County</b><br>",
+      "<b>", NAME, " </b><br>",
       "LISA Quadrant: <b>", quad, "</b><br>",
       "Local Moran p-value: <b>", round(lisa_pval, 4), "</b>" ))
 
@@ -276,10 +278,11 @@ leaflet(counties_lisa) %>%
 *Tip: The `addLayersControl()` function accepts `baseGroups` (radio buttons, one active at a time) and `overlayGroups` (checkboxes, multiple can be active). Basemaps should be `baseGroups`.*
 
 **Reflection question 2 (answer in your repo):** Compare the static LISA map you made in Lab 3 to this interactive version. What does interactivity add? Are there things the static map communicates more clearly? Consider map reading purpose (exploration vs. communication) in your answer.
+-I feel like this interactive map is better for the exploration of this data and how these five states are related to each other. Unless this was published to a website, it would be a lot more difficult to get people to see this map compared to a static map that could be published in a manuscript or something else. The fact that this leaflet map has popups makes it far more convenient for showing different spatial patterns without overflowing the map with county names, p-values, and what the clusters are. It is also helpful to toggle between different basemaps to see if other factors are influencing this behavior like placement of mountain ranges, distance to the coastline, surrounding states, etc.
 
 ---
 
-## Task 3: Free-form map from Lab 4
+## Task 3: Free-form map from Lab 5
 
 *Reference: leaflet docs — `addLayersControl()` with overlayGroups, your choice of other features*
 
@@ -292,10 +295,99 @@ In Lab 5, Task 5, you created an original map combining vector and raster data, 
 Reload the data you used in your original free-form map. Reproject all layers to WGS 84 (EPSG 4326). List the layers you are using in a comment.
 
 ```{r task3_data, echo=TRUE, message=TRUE}
-# your code here
+# To remake the map from lab 5 I will be using some data from my wetland lab group
 # layers I'm using:
-#  - [social layer]: ...
-#  - [environmental layer]: ...
+#  - Landuse Landcover: Social layer demonstrating what the previous designation of this wetland was
+#  - Wetland DEM: Environmental layer showing what the measured DEM is at Trumbull Creek Wetland
+#  - Phosphorus Data: Measured vector data from an undergrad researcher in my lab (Emily)
+
+
+# One of the undergrads in my lab group collected data at the same wetland I did, I will be using some of her SURE work and data points for this exercise
+emily_data <- read_csv("./lab5_data/EmilyCampbell_Combined_SURE_Work.csv")
+
+#turning her work in an sf object
+emily_data_sf <- st_as_sf(emily_data, coords = c("longitude", "latitude"), crs = 4326)
+
+#NE Ohio national landuse cover data
+neoh_nlcd <- terra::rast("./lab5_data/neoh_nlcd.tif") 
+
+#DEM of the wetland area (TRUC aka Trumbull Creek) itself
+TRUC_dem <- terra::rast("./lab5_data/dem_partially_filled.tif")
+
+# Study area of project
+boundary <- sf::read_sf("./lab5_data/PROJECT_LIMITS.shp") 
+
+#checking crs of these rasters
+st_crs(neoh_nlcd)
+st_crs(TRUC_dem)
+
+#reprojecting boundary to the same as SA from earlier
+boundary_new <- st_transform(boundary, st_crs(sa))
+
+TRUC_dem_new <- TRUC_dem %>%  #take raster in 
+  terra::project(., boundary_new) %>% #project it to the same as sa
+  terra::crop(., boundary_new) %>% #crop it to boundary bbox
+  terra::mask(., boundary_new)  #mask to actual boundaries
+
+neoh_nlcd_new <- neoh_nlcd %>%  #take raster in 
+  terra::project(., boundary_new, method = "near") %>% #project it to the same as sa
+  #Had to do this because it is resampling and has decimal values for nlcd
+  terra::crop(., boundary_new) %>% #crop it to boundary bbox
+  terra::mask(., boundary_new) #mask to actual boundaries
+
+#getting the real nlcd color palette
+nlcd_cols <- c(
+  "11" = "#476BA1",  # Open Water
+  "21" = "#DDC9C9",  # Developed, Open Space
+  "22" = "#D89382",  # Developed, Low Intensity
+  "23" = "#ED0000",  # Developed, Medium Intensity
+  "24" = "#AA0000",  # Developed, High Intensity
+  "31" = "#B2ADA3",  # Barren
+  "41" = "#68AA63",  # Deciduous Forest
+  "42" = "#1C6330",  # Evergreen Forest
+  "43" = "#B5C98E",  # Mixed Forest
+  "52" = "#CCBA7C",  # Shrub/Scrub
+  "71" = "#E2E2C1",  # Grassland/Herbaceous
+  "81" = "#DED83E",  # Pasture/Hay
+  "82" = "#AA7028",  # Cultivated Crops
+  "90" = "#BAD8EA",  # Woody Wetlands
+  "95" = "#70A3BA")   # Emergent Herbaceous Wetlands
+
+#had issues with the categorical raster, now I am converting it to a factor first
+# Convert NLCD raster to categorical
+neoh_nlcd_new <- terra::as.factor(neoh_nlcd_new)
+
+
+#creating a map showing the dem of TRUC (environmental), the landuse designation (social), and emily's data points(vector)
+
+TRUC_map <-
+  tm_shape(TRUC_dem_new) + #raster dem of TRUC
+    tm_raster(col.scale = tm_scale_continuous(values = "terrain"),
+              col.legend = tm_legend(position = tm_pos_out("center", "bottom"),
+                                     title="Elevation",
+                                     orientation="landscape")) + #legend on the bottom
+  tm_shape(boundary_new) +  #TRUC shapefile parcel boundary
+    tm_fill(fill_alpha = 0.2) +
+    tm_borders(col = "black") +
+  tm_shape(neoh_nlcd_new) +
+    tm_raster( #for some reason the colors are breaking and are not plotting on here :(
+          col.scale = tm_scale_categorical(values = nlcd_cols), #categorical data and my color palette
+          col_alpha = 0.6, #slightly transparent
+          title = "Historic NLCD Land Cover Classes") +
+      tm_scalebar(position = c("center", "bottom")) +
+      tm_compass(position = c("right", "top"), size = 1.5) +
+  tm_shape(emily_data_sf) +
+    tm_dots(size="P_mg_kgsoil", fill="gold",
+            size.legend = tm_legend("Measured Phosphorus per mg/kg of Soil")) +
+  tm_layout(#I can't seem to get this title any bigger, tried both tm_title and tm_layout
+      main.title = "Soil Phosphorus Measured Throughout the Newly Restored
+Trumbull Creek Wetland and its Previous National Land Cover Class Designation",
+      main.title.size =0.7, #any higher shoots the title away from the map
+      main.title.position = "center",
+      main.title.fontface = "bold")
+
+TRUC_map 
+
 ```
 
 ### 3.2 — Build the interactive map
